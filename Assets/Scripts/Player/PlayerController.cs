@@ -9,14 +9,18 @@ public class PlayerController : MonoBehaviour
 
     public bool isMoving;
     public float moveSpeed = 5f;
-    
+
+    public float lookSpeed = 1.0f;
+    public float minPitch = -85f, maxPitch = 85f;
+
+
     void Start()
     {
         playerInput = GetComponent<PlayerInput>();
 
         playerInput.actions.FindAction("Move").performed += OnMovePerformed;
         playerInput.actions.FindAction("Move").canceled += OnMoveCanceled;
-        playerInput.actions.FindAction("Look").performed += OnLook; 
+        playerInput.actions.FindAction("Look").performed += OnLook;
 
     }
 
@@ -24,7 +28,7 @@ public class PlayerController : MonoBehaviour
     {
         if (!isMoving) return;
         Vector3 move = new Vector3(moveDirection.x, 0, moveDirection.y).normalized;
-        transform.Translate(moveSpeed * Time.deltaTime * move, Space.World);
+        transform.Translate(moveSpeed * Time.deltaTime * move);
     }
 
     void OnMovePerformed(InputAction.CallbackContext callback)
@@ -42,14 +46,19 @@ public class PlayerController : MonoBehaviour
 
     void OnLook(InputAction.CallbackContext callback)
     {
-        // Vector2 lookDirection = callback.ReadValue<Vector2>();
+        Vector2 targetLook = callback.ReadValue<Vector2>();
+        // 스무딩 적용
+        
+        float xRotation = Mathf.Clamp(targetLook.y, minPitch, maxPitch);
+        float yRotation = targetLook.x;
 
-        // // X -> Y Rotation, Y -> X Rotation
-        // Vector3 rotation = new Vector3(-lookDirection.y, lookDirection.x, 0);
-        // Quaternion targetRotation = Quaternion.Euler(rotation + transform.eulerAngles);
-        // transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10f);
+        // 카메라 회전
+        mainCamera.transform.localRotation = Quaternion.Euler(xRotation, 0, 0);
 
-        // Debug.Log("Look: " + callback.ReadValue<Vector2>());
+        // 플레이어 회전
+        transform.rotation = Quaternion.Euler(0, yRotation, 0);
+        
+
     }
 
 }
