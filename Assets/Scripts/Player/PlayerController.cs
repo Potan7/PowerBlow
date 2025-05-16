@@ -3,7 +3,10 @@ using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
-    public Camera mainCamera;
+    public Transform head;
+
+
+
     PlayerInput playerInput;
     Vector2 moveDirection;
 
@@ -20,6 +23,9 @@ public class PlayerController : MonoBehaviour
 
     // 현재 카메라의 X축 회전값 (Pitch)
     private float currentPitch = 0.0f;
+
+    public Animator animator;
+    readonly int isMoveingHash = Animator.StringToHash("isMoving");
 
     void Start()
     {
@@ -46,12 +52,14 @@ public class PlayerController : MonoBehaviour
     {
         moveDirection = callback.ReadValue<Vector2>();
         isMoving = moveDirection != Vector2.zero;
+        animator.SetBool(isMoveingHash, isMoving);
     }
 
     void OnMoveCanceled(InputAction.CallbackContext callback)
     {
         moveDirection = Vector2.zero;
         isMoving = false;
+        animator.SetBool(isMoveingHash, isMoving);
     }
 
     void OnLook(InputAction.CallbackContext callback)
@@ -68,8 +76,7 @@ public class PlayerController : MonoBehaviour
         currentPitch -= mouseY; 
         currentPitch = Mathf.Clamp(currentPitch, pitchMin, pitchMax); // 상하 회전 각도 제한
 
-        // mainCamera.transform.localEulerAngles = new Vector3(currentPitch, 0, 0);
-        mainCamera.transform.localRotation = Quaternion.Euler(currentPitch, 0, 0);
+        head.localRotation = Quaternion.Euler(currentPitch, head.localEulerAngles.y, head.localEulerAngles.z);
     }
 
     // 게임 플레이 중단 또는 메뉴 호출 시 커서 잠금 해제
