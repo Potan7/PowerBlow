@@ -7065,8 +7065,8 @@ MonoBehaviour:
   mouseSensitivity: 0.3
   pitchMin: -85
   pitchMax: 45
-  vaultCheckDistance: 1
-  canVaultHeightRatio: 0.5
+  vaultCheckDistance: 1.2
+  canVaultHeightRatio: 0.7
   vaultLayerMask: 6
   vaultableLayers:
     serializedVersion: 2

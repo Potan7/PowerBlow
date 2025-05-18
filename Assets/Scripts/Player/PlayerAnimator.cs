@@ -16,6 +16,7 @@ public class PlayerAnimator : MonoBehaviour
     
     readonly int fowardMovingHash = Animator.StringToHash("forwardMoveState");
     readonly int rightMovingHash = Animator.StringToHash("rightMoveState");
+    readonly int isVaultingHash = Animator.StringToHash("isVaulting");
 
     public void SetAnim(PlayerState state, bool value = true)
     {
@@ -35,6 +36,9 @@ public class PlayerAnimator : MonoBehaviour
                 break;
             case PlayerState.Sliding:
                 animator.SetBool(isSlidingHash, value);
+                break;
+            case PlayerState.Vaulting:
+                animator.SetTrigger(isVaultingHash);
                 break;
         }
     }
