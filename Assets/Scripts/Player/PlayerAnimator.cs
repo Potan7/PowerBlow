@@ -1,57 +1,61 @@
+using Player.State;
 using UnityEngine;
 
-public class PlayerAnimator : MonoBehaviour
+namespace Player
 {
-    Animator animator;
-
-    private void Awake()
+    public class PlayerAnimator : MonoBehaviour
     {
-        animator = GetComponent<Animator>();
-    }
+        Animator animator;
 
-    readonly int isMovingHash = Animator.StringToHash("isMoving");
-    readonly int isJumpHash = Animator.StringToHash("isJump");
-    readonly int isFallingHash = Animator.StringToHash("isFalling");
-    readonly int isSlidingHash = Animator.StringToHash("isSliding");
-    
-    readonly int fowardMovingHash = Animator.StringToHash("forwardMoveState");
-    readonly int rightMovingHash = Animator.StringToHash("rightMoveState");
-    readonly int isVaultingHash = Animator.StringToHash("isVaulting");
-
-    public void SetAnim(PlayerState state, bool value = true)
-    {
-        switch (state)
+        private void Awake()
         {
-            case PlayerState.Idle:
-                animator.SetBool(isMovingHash, value);
-                break;
-            case PlayerState.Moving:
-                animator.SetBool(isMovingHash, value);
-                break;
-            case PlayerState.Jumping:
-                animator.SetTrigger(isJumpHash);
-                break;
-            case PlayerState.Falling:
-                animator.SetBool(isFallingHash, value);
-                break;
-            case PlayerState.Sliding:
-                animator.SetBool(isSlidingHash, value);
-                break;
-            case PlayerState.Vaulting:
-                animator.SetTrigger(isVaultingHash);
-                break;
+            animator = GetComponent<Animator>();
         }
-    }
 
-    public void SetDirection(Vector2 direction)
-    {
-        animator.SetFloat(fowardMovingHash, direction.y);
-        animator.SetFloat(rightMovingHash, direction.x);
-    }
+        readonly int isMovingHash = Animator.StringToHash("isMoving");
+        readonly int isJumpHash = Animator.StringToHash("isJump");
+        readonly int isFallingHash = Animator.StringToHash("isFalling");
+        readonly int isSlidingHash = Animator.StringToHash("isSliding");
 
-    void OnFootstep(AnimationEvent animationEvent)
-    {
-        
+        readonly int fowardMovingHash = Animator.StringToHash("forwardMoveState");
+        readonly int rightMovingHash = Animator.StringToHash("rightMoveState");
+        readonly int isVaultingHash = Animator.StringToHash("isVaulting");
+
+        public void SetAnim(PlayerState state, bool value = true)
+        {
+            switch (state)
+            {
+                case PlayerState.Idle:
+                    animator.SetBool(isMovingHash, value);
+                    break;
+                case PlayerState.Moving:
+                    animator.SetBool(isMovingHash, value);
+                    break;
+                case PlayerState.Jumping:
+                    animator.SetTrigger(isJumpHash);
+                    break;
+                case PlayerState.Falling:
+                    animator.SetBool(isFallingHash, value);
+                    break;
+                case PlayerState.Sliding:
+                    animator.SetBool(isSlidingHash, value);
+                    break;
+                case PlayerState.Vaulting:
+                    animator.SetTrigger(isVaultingHash);
+                    break;
+            }
+        }
+
+        public void SetDirection(Vector2 direction)
+        {
+            animator.SetFloat(fowardMovingHash, direction.y);
+            animator.SetFloat(rightMovingHash, direction.x);
+        }
+
+        void OnFootstep(AnimationEvent animationEvent)
+        {
+
+        }
+
     }
-    
 }
