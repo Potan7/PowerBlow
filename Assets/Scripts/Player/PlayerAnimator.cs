@@ -41,7 +41,7 @@ namespace Player
                     animator.SetBool(isSlidingHash, value);
                     break;
                 case PlayerState.Vaulting:
-                    animator.SetTrigger(isVaultingHash);
+                    animator.SetBool(isVaultingHash, value);
                     break;
             }
         }

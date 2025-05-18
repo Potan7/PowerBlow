@@ -18,7 +18,7 @@ namespace Player
         // 이동 관련 변수
         public Vector2 MoveInput { get; private set; } // 외부에서 읽기 전용으로 변경
 
-        MyInputActions playerInput;
+        public MyInputActions PlayerInput { get; private set; }
         public CharacterController CharacterControllerComponent { get; private set; } // 상태 클래스에서 접근 가능하도록
         public PlayerAnimator PlayerAnimatorComponent { get; private set; } // 상태 클래스에서 접근 가능하도록
 
@@ -91,25 +91,22 @@ namespace Player
             FallingState = new FallingState(this);
             SlidingState = new SlidingState(this);
             VaultingState = new VaultingState(this);
-        }
 
-        void Start()
-        {
             OriginalPlayerLayer = gameObject.layer;
             StandingColliderHeight = CharacterControllerComponent.height;
             StandingColliderCenterY = CharacterControllerComponent.center.y;
 
-            playerInput = new MyInputActions();
+            PlayerInput = new MyInputActions();
             SetupInputActions();
-            playerInput.Enable();
+            PlayerInput.Enable();
 
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
 
             // 초기 상태 설정
-            TransitionToState(IdleState, PlayerState.Idle);
-            InitializeAnimator();
+            TransitionToState(PlayerState.Idle);
         }
+
 
         void Update()
         {
@@ -124,46 +121,49 @@ namespace Player
         #region Initialization
         void SetupInputActions()
         {
-            playerInput.Player.Move.performed += ctx => MoveInput = ctx.ReadValue<Vector2>();
-            playerInput.Player.Move.canceled += ctx => MoveInput = Vector2.zero;
-            playerInput.Player.Look.performed += OnLook; // OnLook은 카메라 직접 제어
-            playerInput.Player.Jump.performed += OnJumpInput;
-            playerInput.Player.Crouch.performed += OnCrouchInput;
-        }
-
-        void InitializeAnimator()
-        {
-            // 초기 애니메이션 상태 설정은 각 상태의 Enter에서 처리하거나,
-            // PlayerAnimatorComponent.SetAnim(PlayerState.Moving, false); 등으로 직접 설정
+            PlayerInput.Player.Move.performed += ctx => MoveInput = ctx.ReadValue<Vector2>();
+            PlayerInput.Player.Move.canceled += ctx => MoveInput = Vector2.zero;
+            PlayerInput.Player.Look.performed += OnLook; // OnLook은 카메라 직접 제어
+            PlayerInput.Player.Jump.performed += OnJumpInput;
+            PlayerInput.Player.Crouch.performed += OnCrouchInput;
         }
         #endregion
 
         #region State Management
-        public void TransitionToState(IPlayerState nextState, PlayerState stateType)
+        public void TransitionToState(PlayerState stateType)
         {
+            // 이전 상태 Exit
             _currentState?.Exit();
-            _currentState = nextState;
-            CurrentStateType = stateType; // 현재 상태 타입 업데이트
-            _currentState.Enter(this); // 새 상태의 Enter 호출
 
-            // 상태 변경에 따른 공통 처리 (예: 콜라이더, 카메라)
-            OnStateChanged(stateType);
-        }
-
-        void OnStateChanged(PlayerState newState) // 이전 상태는 이제 필요 없음
-        {
-            if (newState == PlayerState.Sliding)
-            {
-                ChangeViewAndCollider(true);
-            }
-            // 슬라이딩에서 다른 상태로 변경될 때 원래대로 복구하는 로직은
-            // SlidingState의 Exit() 또는 다른 상태의 Enter()에서 처리하는 것이 더 명확할 수 있음
-            // 여기서는 간단히 유지하거나, 각 상태의 Enter/Exit에서 관리하도록 변경 가능
-            else if (CurrentStateType != PlayerState.Sliding && // 이전 상태가 슬라이딩이었는지 확인하는 대신 현재 상태가 슬라이딩이 아닌지 확인
-                    (CharacterControllerComponent.height != StandingColliderHeight)) // 이미 복구된 경우 중복 호출 방지
+            // 콜라이더/카메라 복구 (만약 이전 상태가 슬라이딩이었다면)
+            if (CurrentStateType == PlayerState.Sliding && stateType != PlayerState.Sliding)
             {
                 ChangeViewAndCollider(false);
             }
+
+            _currentState = GetStateInstance(stateType);
+            CurrentStateType = stateType;
+            _currentState.Enter(this); // 새 상태의 Enter 호출
+
+            // 콜라이더/카메라 변경 (새 상태가 슬라이딩이라면)
+            if (stateType == PlayerState.Sliding)
+            {
+                ChangeViewAndCollider(true);
+            }
+        }
+
+        private IPlayerState GetStateInstance(PlayerState stateType)
+        {
+            return stateType switch
+            {
+                PlayerState.Idle => IdleState,
+                PlayerState.Moving => MovingState,
+                PlayerState.Jumping => JumpingState,
+                PlayerState.Falling => FallingState,
+                PlayerState.Sliding => SlidingState,
+                PlayerState.Vaulting => VaultingState,
+                _ => throw new ArgumentOutOfRangeException(nameof(stateType), stateType, null)
+            };
         }
         #endregion
 
@@ -249,10 +249,6 @@ namespace Player
                 CharacterControllerComponent.center = new Vector3(0, StandingColliderCenterY, 0);
             }
         }
-
-        // 애니메이터 파라미터 업데이트는 각 상태의 Execute 또는 Enter/Exit에서 처리하거나,
-        // PlayerController에 별도 메서드를 두고 상태가 호출하도록 할 수 있음.
-        // public void UpdateAnimatorParameters(bool isGrounded, bool hasMoveInput) { ... }
         #endregion
     }
 }
