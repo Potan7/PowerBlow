@@ -6,5 +6,6 @@ public enum PlayerState
     Moving,
     Jumping,
     Falling,
-    Sliding    // 슬라이딩 중인 상태
+    Sliding,
+    Vaulting,
 }

@@ -5,14 +5,15 @@ TagManager:
   serializedVersion: 3
   tags:
   - CinemachineTarget
+  - Wall
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - NoCamera
+  - Wall
   - Water
   - UI
-  - 
+  - NoWall
   - 
   - 
   - 
