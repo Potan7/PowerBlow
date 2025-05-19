@@ -529,7 +529,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 7432935585063584597, guid: a88a5d6a61e25a246ba6a4a3da31904f, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -3.16
+      value: -31.07
       objectReference: {fileID: 0}
     - target: {fileID: 7432935585063584597, guid: a88a5d6a61e25a246ba6a4a3da31904f, type: 3}
       propertyPath: m_LocalPosition.y
@@ -537,7 +537,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7432935585063584597, guid: a88a5d6a61e25a246ba6a4a3da31904f, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.54
+      value: -14
       objectReference: {fileID: 0}
     - target: {fileID: 7432935585063584597, guid: a88a5d6a61e25a246ba6a4a3da31904f, type: 3}
       propertyPath: m_LocalRotation.w
@@ -6502,6 +6502,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ragdollSpineRigidbody: {fileID: 76817054}
+  disableRagdollDelay: 4
 --- !u!143 &1808173808
 CharacterController:
   m_ObjectHideFlags: 0
@@ -7110,7 +7111,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &6139434963097583413
 MonoBehaviour:
   m_ObjectHideFlags: 0

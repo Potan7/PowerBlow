@@ -6,6 +6,8 @@ namespace Player.State
     {
         private PlayerController _player;
 
+        const float VaultMargin = 0.5f;
+
         public MovingState(PlayerController player)
         {
             _player = player;
@@ -52,14 +54,13 @@ namespace Player.State
             }
 
             // 4. 슬라이드 요청 감지: 웅크리기 버튼이 활성화되어 있고, 땅에 있으며, 이동 입력이 있다면 SlidingState로 전환
-            // (oldController의 ProcessSlide 참조 - 이동 중 슬라이드 시작)
             if (_player.CrouchActive && _player.CharacterControllerComponent.isGrounded && _player.MoveInput != Vector2.zero)
             {
                 _player.TransitionToState(PlayerState.Sliding);
                 return;
             }
 
-            // 5. 뛰어넘기 시도: 조건이 맞으면 VaultingState로 전환 (기존 TryVault 로직 사용)
+            // 5. 뛰어넘기 시도: 조건이 맞으면 VaultingState로 전환
             TryVault();
             if (_player.CurrentStateType == PlayerState.Vaulting) return; // 뛰어넘기가 시작되었으면 나머지 로직 중단
 
@@ -67,7 +68,7 @@ namespace Player.State
             // 6. 수평 이동 처리
             Vector3 move = new Vector3(_player.MoveInput.x, 0, _player.MoveInput.y);
             move = _player.transform.TransformDirection(move).normalized; // 정규화 추가
-            Vector3 horizontalMovement = move * _player.moveSpeed * Time.deltaTime;
+            Vector3 horizontalMovement = _player.moveSpeed * Time.deltaTime * move;
 
             // 7. 최종 이동 적용: 수평 이동과 수직 이동(중력에 의한 안정화)을 합쳐 적용
             Vector3 verticalMovement = Vector3.up * _player.VerticalVelocity * Time.deltaTime;
@@ -79,13 +80,9 @@ namespace Player.State
 
         public void Exit()
         {
-            // Debug.Log("Exiting Moving State");
-            // Moving 상태를 나갈 때 이동 애니메이션을 false로 할 수 있지만,
-            // 보통 다음 상태의 Enter에서 필요한 애니메이션을 설정하므로 필수는 아님.
-            // _player.PlayerAnimatorComponent.SetAnim(PlayerState.Moving, false);
         }
 
-        // 뛰어넘기 시도 로직 (oldController의 TryInitiateVaultInternal 일부)
+        // 뛰어넘기 시도 로직
         private void TryVault()
         {
             // 뛰어넘기는 땅에 있고, 이동 입력이 있을 때만 시도
@@ -99,7 +96,7 @@ namespace Player.State
                 if (!hitInfo.collider.CompareTag("Wall")) return; // "Wall" 태그가 있는 장애물만
 
                 // 장애물의 실제 상단 표면 찾기
-                if (!_player.TryGetObstacleTopSurface(hitInfo, out float obstacleActualTopY)) return;
+                if (!_player.TryGetObstacleTopSurface(hitInfo.point, out float obstacleActualTopY)) return;
 
                 // 장애물 높이 계산 및 조건 확인
                 float obstacleHeightFromPlayerFeet = obstacleActualTopY - rayOriginFeet.y;
@@ -121,7 +118,7 @@ namespace Player.State
                 Vector3 peakHorizontalBase = hitInfo.point + _player.transform.forward * (_player.CharacterControllerComponent.radius + 0.1f);
                 _player.VaultUpPosition = new Vector3(peakHorizontalBase.x, obstacleActualTopY + _player.CurrentVaultJumpHeight, peakHorizontalBase.z);
 
-                float vaultForwardClearance = obstacleDepth + _player.CharacterControllerComponent.radius + _player.vaultCheckDistance;
+                float vaultForwardClearance = obstacleDepth + _player.CharacterControllerComponent.radius + VaultMargin;
                 _player.VaultEndPosition = hitInfo.point - _player.transform.forward * hitInfo.distance +
                                            _player.transform.forward * (hitInfo.distance + vaultForwardClearance);
                 _player.VaultEndPosition = new Vector3(_player.VaultEndPosition.x, _player.VaultStartPosition.y, _player.VaultEndPosition.z); // 착지 높이는 시작 높이와 동일하게

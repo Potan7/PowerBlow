@@ -16,11 +16,12 @@ namespace Player
         public CinemachineCamera cinemachineCamera;
 
         // 이동 관련 변수
-        public Vector2 MoveInput { get; private set; } // 외부에서 읽기 전용으로 변경
+        public Vector2 MoveInput { get; private set; }
 
         public MyInputActions PlayerInput { get; private set; }
         public CharacterController CharacterControllerComponent { get; private set; } // 상태 클래스에서 접근 가능하도록
         public PlayerAnimator PlayerAnimatorComponent { get; private set; } // 상태 클래스에서 접근 가능하도록
+        private Collider[] _overlapResults = new Collider[5]; // OverlapBoxNonAlloc 결과 저장용
 
         // --- 상태 패턴 관련 ---
         private IPlayerState _currentState = null;
@@ -107,8 +108,6 @@ namespace Player
         {
             // 현재 상태의 Execute 메서드 호출
             _currentState?.Execute();
-
-            // 카메라 처리는 OnLook에서 처리
         }
         #endregion
 
@@ -173,10 +172,10 @@ namespace Player
         #endregion
 
         #region Methods
-        public bool TryGetObstacleTopSurface(RaycastHit frontHit, out float topY)
+        public bool TryGetObstacleTopSurface(Vector3 front, out float topY)
         {
             topY = 0f;
-            Vector3 topRayCheckOrigin = frontHit.point + Vector3.up * (StandingColliderHeight + 0.1f) + transform.forward * 0.05f;
+            Vector3 topRayCheckOrigin = front + Vector3.up * (StandingColliderHeight + 0.1f) + transform.forward * 0.05f;
             Debug.DrawRay(topRayCheckOrigin, Vector3.down * (StandingColliderHeight + 0.2f), Color.magenta, 0.5f);
 
             if (Physics.Raycast(topRayCheckOrigin, Vector3.down, out RaycastHit topSurfaceHit, StandingColliderHeight + 0.2f, vaultableLayers))
@@ -186,7 +185,7 @@ namespace Player
             }
             else
             {
-                Debug.LogWarning("Vault: Could not determine obstacle's top surface. Vault aborted.");
+                // Debug.LogWarning("Vault: Could not determine obstacle's top surface. Vault aborted.");
                 return false;
             }
         }

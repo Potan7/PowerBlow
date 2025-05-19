@@ -33,7 +33,7 @@ namespace Player.State
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Sliding, true);
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Moving, false); // 다른 상태 애니메이션 비활성화
 
-             _player.ChangeViewAndCollider(true); // 슬라이딩 뷰로 변경
+            _player.ChangeViewAndCollider(true); // 슬라이딩 뷰로 변경
         }
 
         public void Execute()
@@ -54,13 +54,20 @@ namespace Player.State
             //    - 웅크리기 버튼 해제
             //    - 슬라이딩 속도가 거의 0이 된 경우
             //    - 점프키가 입력된 경우
-            if (_player.JumpRequested)
+            //    - 플레이어 위에 장애물이 없어야함
+
+            // 만약 플레이어 위에 장애물이 있다면 슬라이딩을 계속 진행
+            // bool isObstacleAbove = _player.CheckObstacleTopSurface();
+            bool isObstacleAbove = CheckObstacleOnTop();
+            if (_player.JumpRequested && !isObstacleAbove)
             {
                 _player.TransitionToState(PlayerState.Jumping);
                 return;
             }
-            if (!_player.CrouchActive || _player.CurrentSlidingVelocity.magnitude <= 0.1f)
+
+            if ((!_player.CrouchActive || _player.CurrentSlidingVelocity.magnitude <= 0.1f) && !isObstacleAbove)
             {
+                // 슬라이딩 종료: 웅크리기 버튼 해제 또는 슬라이딩 속도가 거의 0인 경우
                 if (_player.MoveInput != Vector2.zero)
                 {
                     _player.TransitionToState(PlayerState.Moving);
@@ -69,12 +76,10 @@ namespace Player.State
                 {
                     _player.TransitionToState(PlayerState.Idle);
                 }
-                // CrouchActive는 PlayerController의 입력 콜백에서 토글되므로,
-                // 여기서 false로 설정할 필요는 없음. 상태 전환 시 자연스럽게 슬라이딩이 종료됨.
                 return;
             }
 
-            // 3. 슬라이딩 속도 감속 (oldController의 UpdateSlidingMovement)
+            // 3. 슬라이딩 속도 감속
             if (_player.CurrentSlidingVelocity.magnitude > 0.1f)
             {
                 _player.CurrentSlidingVelocity -= _player.CurrentSlidingVelocity.normalized * _player.slideDeceleration * Time.deltaTime;
@@ -86,7 +91,7 @@ namespace Player.State
 
             // 4. 이동 적용: 슬라이딩 속도와 수직 안정화 속도를 합쳐 적용
             Vector3 horizontalMovement = _player.CurrentSlidingVelocity * Time.deltaTime;
-            Vector3 verticalMovement = Vector3.up * _player.VerticalVelocity * Time.deltaTime;
+            Vector3 verticalMovement = _player.VerticalVelocity * Time.deltaTime * Vector3.up;
             _player.CharacterControllerComponent.Move(horizontalMovement + verticalMovement);
         }
 
@@ -99,7 +104,26 @@ namespace Player.State
             // 슬라이딩 속도 초기화
             _player.CurrentSlidingVelocity = Vector3.zero;
 
-            _player.ChangeViewAndCollider(false); // 여기서 직접 호출해도 무방
+            _player.CrouchActive = false;
+
+            _player.ChangeViewAndCollider(false);
+        }
+
+        public bool CheckObstacleOnTop()
+        {
+            Vector3 topRayCheckOrigin = _player.transform.position;
+            // Debug.DrawRay(topRayCheckOrigin, Vector3.up * (StandingColliderHeight + 0.2f), Color.magenta, 2f);
+
+            if (Physics.Raycast(topRayCheckOrigin, Vector3.up, out RaycastHit topSurfaceHit,  _player.StandingColliderHeight + 0.2f,  _player.vaultableLayers))
+            {
+                // Debug.Log("Obstacle detected above player.");
+                return true;
+            }
+            else
+            {
+                // Debug.Log("No obstacle detected above player.");
+                return false;
+            }
         }
     }
 }

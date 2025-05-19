@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class EnemyController : MonoBehaviour
@@ -9,6 +10,15 @@ public class EnemyController : MonoBehaviour
 
     private Collider[] ragdollColliders;
     private Rigidbody[] ragdollRigidbodies;
+
+    Coroutine disableRagdollCoroutine;
+    public float disableRagdollDelay = 4f;
+
+    // int _animatorIsRagdollHash = Animator.StringToHash("isRagdoll");
+    int _animatorImpactHash = Animator.StringToHash("impact");
+    int _animatorIsMovingHash = Animator.StringToHash("isMoving");
+
+    Vector3 moveDirection;
 
     void Start()
     {
@@ -30,15 +40,43 @@ public class EnemyController : MonoBehaviour
         _characterController.enabled = true;
     }
 
+    void Update()
+    {
+        if (!_characterController.enabled) return;
+
+        float verticalMovement = 0f;
+        float horizontalMovement = 0f;
+
+        if (!_characterController.isGrounded)
+        {
+            // 중력
+            verticalMovement += Physics.gravity.y;
+        }
+
+        // 이동 처리
+        moveDirection = new Vector3(moveDirection.x * horizontalMovement, verticalMovement, moveDirection.z * horizontalMovement);
+        _characterController.Move(moveDirection * Time.deltaTime);
+    }
+
 
     void OnFootstep(AnimationEvent animationEvent)
     {
 
     }
 
-    public void SetRagdollActive(bool isActive)
+    void SetRagdollActive(bool isActive)
     {
+        _animator.enabled = !isActive;
+        _characterController.enabled = !isActive;
 
+        foreach (var collider in ragdollColliders)
+        {
+            collider.enabled = isActive;
+        }
+        foreach (var rb in ragdollRigidbodies)
+        {
+            rb.isKinematic = !isActive;
+        }
     }
 
     public void Impact(Vector3 force)
@@ -46,5 +84,26 @@ public class EnemyController : MonoBehaviour
         SetRagdollActive(true);
 
         ragdollSpineRigidbody.AddForce(force, ForceMode.Impulse);
+
+        disableRagdollCoroutine = StartCoroutine(DisableRagdoll(disableRagdollDelay));
+    }
+
+    [ContextMenu("Debug Impact")]
+    public void ImpactDebug()
+    {
+        Vector3 force = new Vector3(0, 10, 10);
+        Impact(force);
+    }
+
+    IEnumerator DisableRagdoll(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        transform.position = ragdollSpineRigidbody.position;
+        ragdollSpineRigidbody.transform.localPosition = Vector3.zero;
+
+        _animator.SetTrigger(_animatorImpactHash);
+
+        SetRagdollActive(false);
     }
 }
