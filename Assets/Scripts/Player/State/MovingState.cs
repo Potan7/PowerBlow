@@ -11,11 +11,8 @@ namespace Player.State
             _player = player;
         }
 
-        public void Enter(PlayerController playerController)
+        public void Enter()
         {
-            _player = playerController;
-            // Debug.Log("Entering Moving State");
-
             // 이동 애니메이션 활성화
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Moving, true);
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Sliding, false); // 혹시 모를 슬라이딩 애니메이션 해제
@@ -124,7 +121,7 @@ namespace Player.State
                 Vector3 peakHorizontalBase = hitInfo.point + _player.transform.forward * (_player.CharacterControllerComponent.radius + 0.1f);
                 _player.VaultUpPosition = new Vector3(peakHorizontalBase.x, obstacleActualTopY + _player.CurrentVaultJumpHeight, peakHorizontalBase.z);
 
-                float vaultForwardClearance = obstacleDepth + _player.CharacterControllerComponent.radius + 0.2f;
+                float vaultForwardClearance = obstacleDepth + _player.CharacterControllerComponent.radius + _player.vaultCheckDistance;
                 _player.VaultEndPosition = hitInfo.point - _player.transform.forward * hitInfo.distance +
                                            _player.transform.forward * (hitInfo.distance + vaultForwardClearance);
                 _player.VaultEndPosition = new Vector3(_player.VaultEndPosition.x, _player.VaultStartPosition.y, _player.VaultEndPosition.z); // 착지 높이는 시작 높이와 동일하게

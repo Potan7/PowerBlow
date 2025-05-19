@@ -4694,11 +4694,11 @@ Transform:
   m_GameObject: {fileID: 1141617923}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -32.35, y: 3.246, z: -18.851}
+  m_LocalPosition: {x: 0, y: 1.69, z: 0.25699997}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 662116254205453082}
   m_LocalEulerAnglesHint: {x: -94.855, y: 90, z: 0}
 --- !u!114 &1141617926
 MonoBehaviour:
@@ -4901,7 +4901,7 @@ Transform:
   m_GameObject: {fileID: 1227975102}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -32.35, y: 3.246, z: -18.851}
+  m_LocalPosition: {x: -32.35, y: 3.124, z: -18.763}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6998,7 +6998,7 @@ Transform:
   m_GameObject: {fileID: 1889648174}
   serializedVersion: 2
   m_LocalRotation: {x: 0.00000005960463, y: 0.000000021114579, z: -0.000000021032262, w: 1}
-  m_LocalPosition: {x: 0, y: 1.812, z: 0.169}
+  m_LocalPosition: {x: 0, y: 1.69, z: 0.257}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -7019,6 +7019,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 844005101}
+  - {fileID: 1141617924}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &5599829590997140480
@@ -7054,9 +7055,7 @@ MonoBehaviour:
   head: {fileID: 1238423728}
   cameraTransform: {fileID: 1536879912}
   cinemachineCamera: {fileID: 1141617927}
-  playerAnimator: {fileID: 1115717923}
-  currentState: 0
-  slidingState: {x: 0, y: 0, z: 0}
+  CurrentSlidingVelocity: {x: 0, y: 0, z: 0}
   moveSpeed: 10
   jumpPower: 5
   slideInitialSpeedMultiplier: 1.5
@@ -7071,7 +7070,6 @@ MonoBehaviour:
   vaultableLayers:
     serializedVersion: 2
     m_Bits: 8
-  depthThreshold: 5
   baseVaultDuration: 0.4
   vaultDurationPerMeterDepth: 0.15
   vaultDurationPerMeterHeight: 0.1
@@ -7112,7 +7110,6 @@ SceneRoots:
   - {fileID: 410087041}
   - {fileID: 832575519}
   - {fileID: 998011131}
-  - {fileID: 1141617924}
   - {fileID: 662116254205453082}
   - {fileID: 232922334}
   - {fileID: 1676943447}

@@ -11,11 +11,8 @@ namespace Player.State
             _player = player;
         }
 
-        public void Enter(PlayerController playerController)
+        public void Enter()
         {
-            _player = playerController;
-            // Debug.Log("Entering Sliding State");
-
             // 슬라이딩 시작 시 초기 속도 설정 (oldController의 StartSliding)
             Vector3 worldMoveDir = _player.transform.TransformDirection(new Vector3(_player.MoveInput.x, 0, _player.MoveInput.y)).normalized;
             // 만약 진입 시 MoveInput이 없다면 (예: 착지 슬라이드), 이전 속도나 기본 전방 속도를 사용할 수 있음
@@ -36,8 +33,7 @@ namespace Player.State
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Sliding, true);
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Moving, false); // 다른 상태 애니메이션 비활성화
 
-            // 콜라이더 및 카메라 변경은 PlayerController의 TransitionToState -> OnStateChanged에서 처리됨
-            // _player.ChangeViewAndCollider(true); // 여기서 직접 호출해도 무방
+             _player.ChangeViewAndCollider(true); // 슬라이딩 뷰로 변경
         }
 
         public void Execute()
@@ -64,19 +60,19 @@ namespace Player.State
                 return;
             }
             if (!_player.CrouchActive || _player.CurrentSlidingVelocity.magnitude <= 0.1f)
+            {
+                if (_player.MoveInput != Vector2.zero)
                 {
-                    if (_player.MoveInput != Vector2.zero)
-                    {
-                        _player.TransitionToState(PlayerState.Moving);
-                    }
-                    else
-                    {
-                        _player.TransitionToState( PlayerState.Idle);
-                    }
-                    // CrouchActive는 PlayerController의 입력 콜백에서 토글되므로,
-                    // 여기서 false로 설정할 필요는 없음. 상태 전환 시 자연스럽게 슬라이딩이 종료됨.
-                    return;
+                    _player.TransitionToState(PlayerState.Moving);
                 }
+                else
+                {
+                    _player.TransitionToState(PlayerState.Idle);
+                }
+                // CrouchActive는 PlayerController의 입력 콜백에서 토글되므로,
+                // 여기서 false로 설정할 필요는 없음. 상태 전환 시 자연스럽게 슬라이딩이 종료됨.
+                return;
+            }
 
             // 3. 슬라이딩 속도 감속 (oldController의 UpdateSlidingMovement)
             if (_player.CurrentSlidingVelocity.magnitude > 0.1f)
@@ -92,9 +88,6 @@ namespace Player.State
             Vector3 horizontalMovement = _player.CurrentSlidingVelocity * Time.deltaTime;
             Vector3 verticalMovement = Vector3.up * _player.VerticalVelocity * Time.deltaTime;
             _player.CharacterControllerComponent.Move(horizontalMovement + verticalMovement);
-
-            // 슬라이딩 중에는 특정 방향으로 애니메이션 고정 또는 미세 조정 가능
-            // _player.PlayerAnimatorComponent.SetDirection(...);
         }
 
         public void Exit()
@@ -106,8 +99,7 @@ namespace Player.State
             // 슬라이딩 속도 초기화
             _player.CurrentSlidingVelocity = Vector3.zero;
 
-            // 콜라이더 및 카메라 복구는 PlayerController의 TransitionToState -> OnStateChanged에서 처리됨
-            // _player.ChangeViewAndCollider(false); // 여기서 직접 호출해도 무방
+            _player.ChangeViewAndCollider(false); // 여기서 직접 호출해도 무방
         }
     }
 }

@@ -4,7 +4,7 @@ namespace Player.State
 {
     public enum PlayerState
     {
-        Idle,
+        Idle = 0,
         Moving,
         Jumping,
         Falling,

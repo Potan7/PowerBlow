@@ -13,11 +13,8 @@ namespace Player.State
         }
 
         // 상태 진입 시 호출되는 메서드
-        public void Enter(PlayerController playerController)
+        public void Enter()
         {
-            // PlayerController 참조를 최신으로 유지 (필수는 아니지만 좋은 습관)
-            _player = playerController;
-
             // Debug.Log("Entering Falling State");
             // 낙하 애니메이션 활성화
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Falling, true);

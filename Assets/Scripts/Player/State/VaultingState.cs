@@ -11,9 +11,8 @@ namespace Player.State
             _player = player;
         }
 
-        public void Enter(PlayerController player)
+        public void Enter()
         {
-            _player = player;
             _player.IsVaultingInternal = true; // PlayerController의 플래그와 동기화
             _player.gameObject.layer = _player.vaultLayerMask;
             _player.VaultStartTime = Time.time;

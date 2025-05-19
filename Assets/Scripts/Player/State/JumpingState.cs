@@ -11,11 +11,8 @@ namespace Player.State
             _player = player;
         }
 
-        public void Enter(PlayerController playerController)
+        public void Enter()
         {
-            _player = playerController;
-            // Debug.Log("Entering Jumping State");
-
             // 점프 시작 시 수직 속도 설정 (oldController의 ProcessJump)
             _player.VerticalVelocity = _player.jumpPower;
             _player.JumpRequested = false; // 점프 요청 처리 완료

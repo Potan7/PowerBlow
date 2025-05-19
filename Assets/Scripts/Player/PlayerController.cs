@@ -23,13 +23,8 @@ namespace Player
         public PlayerAnimator PlayerAnimatorComponent { get; private set; } // 상태 클래스에서 접근 가능하도록
 
         // --- 상태 패턴 관련 ---
-        private IPlayerState _currentState;
-        public IdleState IdleState { get; private set; }
-        public MovingState MovingState { get; private set; }
-        public JumpingState JumpingState { get; private set; }
-        public FallingState FallingState { get; private set; }
-        public SlidingState SlidingState { get; private set; }
-        public VaultingState VaultingState { get; private set; }
+        private IPlayerState _currentState = null;
+        private IPlayerState[] _states; // 상태 인스턴스 배열 (상태 전환 시 사용)
         public PlayerState CurrentStateType { get; private set; } // 애니메이터나 UI 등에서 현재 상태 종류를 쉽게 알 수 있도록
 
         // --- 내부 요청 플래그 (상태 클래스에서 사용) ---
@@ -78,28 +73,28 @@ namespace Player
         public float CurrentVaultJumpHeight { get; set; }
         #endregion
 
-        #region Unity Lifecycle
+        #region Unity Methods
         void Awake()
         {
             CharacterControllerComponent = GetComponent<CharacterController>();
-            PlayerAnimatorComponent = GetComponentInChildren<PlayerAnimator>(); // PlayerAnimator 참조 방식에 따라 수정
+            PlayerAnimatorComponent = GetComponentInChildren<PlayerAnimator>();
 
             // 상태 인스턴스 생성
-            IdleState = new IdleState(this);
-            MovingState = new MovingState(this);
-            JumpingState = new JumpingState(this);
-            FallingState = new FallingState(this);
-            SlidingState = new SlidingState(this);
-            VaultingState = new VaultingState(this);
-
-            OriginalPlayerLayer = gameObject.layer;
-            StandingColliderHeight = CharacterControllerComponent.height;
-            StandingColliderCenterY = CharacterControllerComponent.center.y;
-
+            _states = new IPlayerState[]
+            {
+                new IdleState(this),
+                new MovingState(this),
+                new JumpingState(this),
+                new FallingState(this),
+                new SlidingState(this),
+                new VaultingState(this)
+            };
             PlayerInput = new MyInputActions();
-            SetupInputActions();
-            PlayerInput.Enable();
 
+            Initialization();
+
+            PlayerInput.Enable();
+            // 마우스 설정
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
 
@@ -113,19 +108,22 @@ namespace Player
             // 현재 상태의 Execute 메서드 호출
             _currentState?.Execute();
 
-            // 카메라 회전은 PlayerController에서 계속 처리 (상태와 무관하게)
-            // 단, 입력 처리는 OnLook에서 이미 수행됨
+            // 카메라 처리는 OnLook에서 처리
         }
         #endregion
 
         #region Initialization
-        void SetupInputActions()
+        void Initialization()
         {
             PlayerInput.Player.Move.performed += ctx => MoveInput = ctx.ReadValue<Vector2>();
             PlayerInput.Player.Move.canceled += ctx => MoveInput = Vector2.zero;
             PlayerInput.Player.Look.performed += OnLook; // OnLook은 카메라 직접 제어
             PlayerInput.Player.Jump.performed += OnJumpInput;
             PlayerInput.Player.Crouch.performed += OnCrouchInput;
+
+            OriginalPlayerLayer = gameObject.layer;
+            StandingColliderHeight = CharacterControllerComponent.height;
+            StandingColliderCenterY = CharacterControllerComponent.center.y;
         }
         #endregion
 
@@ -135,68 +133,9 @@ namespace Player
             // 이전 상태 Exit
             _currentState?.Exit();
 
-            // 콜라이더/카메라 복구 (만약 이전 상태가 슬라이딩이었다면)
-            if (CurrentStateType == PlayerState.Sliding && stateType != PlayerState.Sliding)
-            {
-                ChangeViewAndCollider(false);
-            }
-
-            _currentState = GetStateInstance(stateType);
+            _currentState = _states[(int)stateType];
             CurrentStateType = stateType;
-            _currentState.Enter(this); // 새 상태의 Enter 호출
-
-            // 콜라이더/카메라 변경 (새 상태가 슬라이딩이라면)
-            if (stateType == PlayerState.Sliding)
-            {
-                ChangeViewAndCollider(true);
-            }
-        }
-
-        private IPlayerState GetStateInstance(PlayerState stateType)
-        {
-            return stateType switch
-            {
-                PlayerState.Idle => IdleState,
-                PlayerState.Moving => MovingState,
-                PlayerState.Jumping => JumpingState,
-                PlayerState.Falling => FallingState,
-                PlayerState.Sliding => SlidingState,
-                PlayerState.Vaulting => VaultingState,
-                _ => throw new ArgumentOutOfRangeException(nameof(stateType), stateType, null)
-            };
-        }
-        #endregion
-
-        #region Vaulting Helpers
-        public bool TryGetObstacleTopSurface(RaycastHit frontHit, out float topY)
-        {
-            topY = 0f;
-            Vector3 topRayCheckOrigin = frontHit.point + Vector3.up * (StandingColliderHeight + 0.1f) + transform.forward * 0.05f;
-            Debug.DrawRay(topRayCheckOrigin, Vector3.down * (StandingColliderHeight + 0.2f), Color.magenta, 0.5f);
-
-            if (Physics.Raycast(topRayCheckOrigin, Vector3.down, out RaycastHit topSurfaceHit, StandingColliderHeight + 0.2f, vaultableLayers))
-            {
-                topY = topSurfaceHit.point.y;
-                return true;
-            }
-            else
-            {
-                Debug.LogWarning("Vault: Could not determine obstacle's top surface. Vault aborted.");
-                return false;
-            }
-        }
-
-        public float CalculateObstacleDepth(RaycastHit hitInfo)
-        {
-            Bounds obstacleBounds = hitInfo.collider.bounds;
-            return Mathf.Abs(Vector3.Dot(obstacleBounds.extents, transform.forward.normalized)) * 2f;
-        }
-
-        public void CalculateDynamicVaultParameters(float depth, float height)
-        {
-            CurrentVaultDuration = baseVaultDuration + (depth * vaultDurationPerMeterDepth) + (height * vaultDurationPerMeterHeight);
-            CurrentVaultDuration = Mathf.Clamp(CurrentVaultDuration, minVaultDuration, maxVaultDuration);
-            CurrentVaultJumpHeight = minVaultClearance + (height * vaultHeightMultiplier);
+            _currentState.Enter(); // 새 상태의 Enter 호출
         }
         #endregion
 
@@ -234,6 +173,37 @@ namespace Player
         #endregion
 
         #region Methods
+        public bool TryGetObstacleTopSurface(RaycastHit frontHit, out float topY)
+        {
+            topY = 0f;
+            Vector3 topRayCheckOrigin = frontHit.point + Vector3.up * (StandingColliderHeight + 0.1f) + transform.forward * 0.05f;
+            Debug.DrawRay(topRayCheckOrigin, Vector3.down * (StandingColliderHeight + 0.2f), Color.magenta, 0.5f);
+
+            if (Physics.Raycast(topRayCheckOrigin, Vector3.down, out RaycastHit topSurfaceHit, StandingColliderHeight + 0.2f, vaultableLayers))
+            {
+                topY = topSurfaceHit.point.y;
+                return true;
+            }
+            else
+            {
+                Debug.LogWarning("Vault: Could not determine obstacle's top surface. Vault aborted.");
+                return false;
+            }
+        }
+
+        public float CalculateObstacleDepth(RaycastHit hitInfo)
+        {
+            Bounds obstacleBounds = hitInfo.collider.bounds;
+            return Mathf.Abs(Vector3.Dot(obstacleBounds.extents, transform.forward.normalized)) * 2f;
+        }
+
+        public void CalculateDynamicVaultParameters(float depth, float height)
+        {
+            CurrentVaultDuration = baseVaultDuration + (depth * vaultDurationPerMeterDepth) + (height * vaultDurationPerMeterHeight);
+            CurrentVaultDuration = Mathf.Clamp(CurrentVaultDuration, minVaultDuration, maxVaultDuration);
+            CurrentVaultJumpHeight = minVaultClearance + (height * vaultHeightMultiplier);
+        }
+
         public void ChangeViewAndCollider(bool isSlidingView)
         {
             if (isSlidingView)

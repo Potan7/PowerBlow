@@ -11,11 +11,8 @@ namespace Player.State
             _player = player;
         }
 
-        public void Enter(PlayerController playerController)
+        public void Enter()
         {
-            _player = playerController;
-            // Debug.Log("Entering Idle State");
-
             // Idle 상태에 맞는 애니메이션 설정
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Moving, false);
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Sliding, false);
