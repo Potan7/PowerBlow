@@ -5,8 +5,8 @@ namespace Player.State
     public class MovingState : IPlayerState
     {
         private PlayerController _player;
-
-        const float VaultMargin = 0.5f;
+        // private const float VaultMargin = 0.1f; // VaultEndPosition 계산 시 장애물로부터의 여유 공간
+        private const float ClimbUpClearance = 0.5f; // 기어오르기 시 장애물 위에서의 전방 여유 공간
 
         public MovingState(PlayerController player)
         {
@@ -17,7 +17,7 @@ namespace Player.State
         {
             // 이동 애니메이션 활성화
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Moving, true);
-            _player.PlayerAnimatorComponent.SetAnim(PlayerState.Sliding, false); // 혹시 모를 슬라이딩 애니메이션 해제
+            _player.JumpRequested = false; // Moving 상태 진입 시 점프 요청 초기화
         }
 
         public void Execute()
@@ -29,8 +29,8 @@ namespace Player.State
                 // 공중에 뜨면 즉시 Falling 상태로 전환 (점프가 아닌 경우)
                 if (_player.VerticalVelocity < -0.1f) // 점프 직후가 아닌, 일반적인 낙하 시작 감지
                 {
-                     _player.TransitionToState(PlayerState.Falling);
-                     return;
+                    _player.TransitionToState(PlayerState.Falling);
+                    return;
                 }
             }
             else if (_player.VerticalVelocity < 0)
@@ -43,6 +43,20 @@ namespace Player.State
             {
                 _player.TransitionToState(PlayerState.Idle);
                 return;
+            }
+
+            // 5. 뛰어넘기 또는 기어오르기 시도
+            // 전방에 장애물이 있고, 플레이어가 충분히 가까이 있으며, 점프 입력이 있었을 때
+            // 또는 특정 조건 (예: 계속 앞으로 이동 중)에서 자동으로 시도할 수도 있음
+            // 여기서는 점프 입력과 함께 전방 장애물 감지 시 시도한다고 가정
+            if (_player.JumpRequested && _player.MoveInput.y > 0.5f) // 점프 입력 + 앞으로 이동 중일 때
+            {
+                if (TryAttemptVaultOrClimb())
+                {
+                    // TryAttemptVaultOrClimb 내부에서 상태 전환이 일어나므로 여기서 return
+                    return;
+                }
+                // 뛰어넘기/기어오르기 실패 시, 일반 점프로 처리될 수 있도록 JumpRequested는 유지
             }
 
             // 3. 점프 요청 감지: 점프 버튼이 눌렸고 땅에 있다면 JumpingState로 전환
@@ -60,72 +74,126 @@ namespace Player.State
                 return;
             }
 
-            // 5. 뛰어넘기 시도: 조건이 맞으면 VaultingState로 전환
-            TryVault();
-            if (_player.CurrentStateType == PlayerState.Vaulting) return; // 뛰어넘기가 시작되었으면 나머지 로직 중단
 
 
-            // 6. 수평 이동 처리
-            Vector3 move = new Vector3(_player.MoveInput.x, 0, _player.MoveInput.y);
-            move = _player.transform.TransformDirection(move).normalized; // 정규화 추가
-            Vector3 horizontalMovement = _player.moveSpeed * Time.deltaTime * move;
 
-            // 7. 최종 이동 적용: 수평 이동과 수직 이동(중력에 의한 안정화)을 합쳐 적용
-            Vector3 verticalMovement = Vector3.up * _player.VerticalVelocity * Time.deltaTime;
+            // 일반 이동 로직
+            Vector3 moveDirection = _player.transform.TransformDirection(new Vector3(_player.MoveInput.x, 0, _player.MoveInput.y)).normalized;
+            Vector3 horizontalMovement = moveDirection * _player.moveSpeed * Time.deltaTime;
+
+            // 중력 적용
+            if (!_player.CharacterControllerComponent.isGrounded)
+            {
+                _player.VerticalVelocity += Physics.gravity.y * Time.deltaTime;
+            }
+            else if (_player.VerticalVelocity < 0)
+            {
+                _player.VerticalVelocity = -2f; // 안정적인 착지를 위해
+            }
+
+            Vector3 verticalMovement = _player.VerticalVelocity * Time.deltaTime * Vector3.up;
             _player.CharacterControllerComponent.Move(horizontalMovement + verticalMovement);
 
-            // 8. 애니메이터 방향 업데이트
-            _player.PlayerAnimatorComponent.SetDirection(_player.MoveInput);
+
+            // 상태 전환 로직 (기존과 유사하게)
+            if (_player.JumpRequested && _player.CharacterControllerComponent.isGrounded)
+            {
+                _player.TransitionToState(PlayerState.Jumping);
+                return;
+            }
+
+            if (!_player.CharacterControllerComponent.isGrounded && _player.VerticalVelocity < -0.1f) // 떨어지기 시작하면
+            {
+                _player.TransitionToState(PlayerState.Falling);
+                return;
+            }
+
+            if (_player.CrouchActive && _player.CharacterControllerComponent.isGrounded && _player.CharacterControllerComponent.velocity.magnitude > 0.1f)
+            {
+                _player.TransitionToState(PlayerState.Sliding);
+                return;
+            }
+
+            if (_player.MoveInput == Vector2.zero && _player.CharacterControllerComponent.isGrounded)
+            {
+                _player.TransitionToState(PlayerState.Idle);
+                return;
+            }
+
+            // 애니메이션 파라미터 업데이트 (필요하다면)
+            // _player.PlayerAnimatorComponent.SetFloat("Speed", _player.CharacterControllerComponent.velocity.magnitude);
         }
+
+
+        private bool TryAttemptVaultOrClimb()
+        {
+            Vector3 rayOrigin = _player.transform.position + _player.CharacterControllerComponent.center + (_player.transform.forward * _player.CharacterControllerComponent.radius);
+            // Debug.DrawRay(rayOrigin, _player.transform.forward * _player.vaultCheckDistance, Color.blue, 1f);
+
+            if (Physics.Raycast(rayOrigin, _player.transform.forward, out RaycastHit hitInfo, _player.vaultCheckDistance, _player.vaultableLayers))
+            {
+                float obstacleHeight = hitInfo.point.y - _player.transform.position.y; // 대략적인 장애물 높이 (발밑 기준)
+
+                if (obstacleHeight < _player.CharacterControllerComponent.height * _player.canVaultHeightRatio && obstacleHeight > 0.1f) // 너무 낮거나 높지 않은 장애물
+                {
+                    float obstacleDepth = _player.CalculateObstacleDepth(hitInfo); // PlayerController에 있는 메서드 사용
+
+                     Debug.Log($"Calculated Obstacle Depth: {obstacleDepth}, Max Vaultable Depth: {_player.maxVaultableDepth}"); // 로그 추가
+
+                    if (obstacleDepth < _player.maxVaultableDepth) // 일반 뛰어넘기 조건
+                    {
+                        // --- 일반 Vaulting 로직 ---
+                        if (_player.TryGetObstacleTopSurface(hitInfo.point, out float topY))
+                        {
+                            _player.VaultStartPosition = _player.transform.position;
+                            _player.VaultUpPosition = new Vector3(hitInfo.point.x, topY + _player.minVaultClearance, hitInfo.point.z) + (_player.transform.forward * (obstacleDepth * 0.3f)); // 장애물 위로 살짝 올라감
+
+                            // VaultEndPosition: 장애물 너머로 안전하게 착지할 위치
+                            float vaultForwardClearance = obstacleDepth + _player.CharacterControllerComponent.radius + 0.2f; // 장애물 깊이 + 플레이어 반지름 + 여유 공간
+                            _player.VaultEndPosition = hitInfo.collider.ClosestPointOnBounds(_player.transform.position + _player.transform.forward * 10f); // 장애물 뒷면 근처
+                            _player.VaultEndPosition = new Vector3(_player.VaultEndPosition.x, _player.VaultStartPosition.y, _player.VaultEndPosition.z) + _player.transform.forward * (_player.CharacterControllerComponent.radius + 0.2f);
+
+
+                            _player.CalculateDynamicVaultParameters(obstacleDepth, topY - _player.VaultStartPosition.y);
+                            _player.TransitionToState(PlayerState.Vaulting);
+                            _player.JumpRequested = false;
+                            return true;
+                        }
+                    }
+                    else // 기어오르기 조건 (장애물이 너무 깊을 때)
+                    {
+                        // --- ClimbingUp 로직 ---
+                        if (_player.TryGetObstacleTopSurface(hitInfo.point, out float topY))
+                        {
+                            _player.VaultStartPosition = _player.transform.position; // 현재 위치에서 시작
+                            // VaultUpPosition을 장애물 바로 위 가장자리로 설정
+                            _player.VaultUpPosition = new Vector3(hitInfo.point.x, topY, hitInfo.point.z) + (_player.transform.forward * (_player.CharacterControllerComponent.radius * 0.5f)); // 장애물 표면에 가깝게
+
+                            // VaultEndPosition을 장애물 위 안전한 착지 지점으로 설정
+                            _player.VaultEndPosition = _player.VaultUpPosition + _player.transform.forward * ClimbUpClearance; // 장애물 위에서 앞으로 약간 이동
+
+                            // ClimbingUp에 필요한 파라미터 설정 (Vaulting과 유사하게 또는 별도로)
+                            // 예: _player.CurrentClimbDuration = ...
+                            // 여기서는 ClimbingUpState의 Enter에서 고정된 _climbDuration을 사용하거나,
+                            // PlayerController에 CurrentClimbDuration 같은 속성을 추가하여 동적으로 설정할 수 있습니다.
+                            // 간단하게 Vaulting의 파라미터를 재활용하거나, ClimbingUpState에서 자체적으로 계산하도록 할 수 있습니다.
+                            // 여기서는 VaultUpPosition과 VaultEndPosition만 설정하고 ClimbingUpState에서 사용합니다.
+
+                            _player.TransitionToState(PlayerState.ClimbingUp);
+                            _player.JumpRequested = false;
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
 
         public void Exit()
         {
-        }
-
-        // 뛰어넘기 시도 로직
-        private void TryVault()
-        {
-            // 뛰어넘기는 땅에 있고, 이동 입력이 있을 때만 시도
-            if (!_player.CharacterControllerComponent.isGrounded || _player.MoveInput == Vector2.zero) return;
-
-            // 캐릭터 발 근처에서 약간 앞에서 레이캐스트 시작
-            Vector3 rayOriginFeet = _player.transform.position + _player.CharacterControllerComponent.center + Vector3.up * (-_player.StandingColliderHeight / 2f + 0.05f);
-
-            if (Physics.Raycast(rayOriginFeet, _player.transform.forward, out RaycastHit hitInfo, _player.vaultCheckDistance, _player.vaultableLayers))
-            {
-                if (!hitInfo.collider.CompareTag("Wall")) return; // "Wall" 태그가 있는 장애물만
-
-                // 장애물의 실제 상단 표면 찾기
-                if (!_player.TryGetObstacleTopSurface(hitInfo.point, out float obstacleActualTopY)) return;
-
-                // 장애물 높이 계산 및 조건 확인
-                float obstacleHeightFromPlayerFeet = obstacleActualTopY - rayOriginFeet.y;
-                float maxVaultableHeight = _player.StandingColliderHeight * _player.canVaultHeightRatio;
-
-                if (obstacleHeightFromPlayerFeet < 0.1f || obstacleHeightFromPlayerFeet >= maxVaultableHeight)
-                {
-                    // Debug.LogWarning($"Vault: Obstacle height {obstacleHeightFromPlayerFeet} is not vaultable. Vault aborted.");
-                    return;
-                }
-
-                // 장애물 깊이 및 동적 파라미터 계산
-                float obstacleDepth = _player.CalculateObstacleDepth(hitInfo);
-                _player.CalculateDynamicVaultParameters(obstacleDepth, obstacleHeightFromPlayerFeet);
-
-                // 뛰어넘기 시작 위치, 정점, 끝점 설정 (PlayerController의 프로퍼티 사용)
-                _player.VaultStartPosition = _player.transform.position;
-
-                Vector3 peakHorizontalBase = hitInfo.point + _player.transform.forward * (_player.CharacterControllerComponent.radius + 0.1f);
-                _player.VaultUpPosition = new Vector3(peakHorizontalBase.x, obstacleActualTopY + _player.CurrentVaultJumpHeight, peakHorizontalBase.z);
-
-                float vaultForwardClearance = obstacleDepth + _player.CharacterControllerComponent.radius + VaultMargin;
-                _player.VaultEndPosition = hitInfo.point - _player.transform.forward * hitInfo.distance +
-                                           _player.transform.forward * (hitInfo.distance + vaultForwardClearance);
-                _player.VaultEndPosition = new Vector3(_player.VaultEndPosition.x, _player.VaultStartPosition.y, _player.VaultEndPosition.z); // 착지 높이는 시작 높이와 동일하게
-
-                // VaultingState로 전환
-                _player.TransitionToState(PlayerState.Vaulting);
-            }
+            // 이동 애니메이션 비활성화
+            _player.PlayerAnimatorComponent.SetAnim(PlayerState.Moving, false);
         }
     }
 }

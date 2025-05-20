@@ -8,6 +8,21 @@ namespace Player
 {
     public class PlayerController : MonoBehaviour
     {
+        #region Singleton
+        public static PlayerController Instance { get; private set; }
+        private void Awake()
+        {
+            if (Instance == null)
+            {
+                Instance = this;
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
+        }
+        #endregion
+
         #region Variables
         // -- 카메라 관련 변수 --
         [Header("Camera and Reference")]
@@ -61,6 +76,7 @@ namespace Player
         public Vector3 VaultUpPosition { get; set; }
         public Vector3 VaultEndPosition { get; set; }
         public float VaultStartTime { get; set; }
+        public float maxVaultableDepth = 1.0f;  // 장애물 뛰어넘을 최대 길이
 
         [Header("Dynamic Vault Parameters")]
         public float baseVaultDuration = 0.4f;
@@ -75,7 +91,7 @@ namespace Player
         #endregion
 
         #region Unity Methods
-        void Awake()
+        void Start()
         {
             CharacterControllerComponent = GetComponent<CharacterController>();
             PlayerAnimatorComponent = GetComponentInChildren<PlayerAnimator>();
@@ -88,7 +104,8 @@ namespace Player
                 new JumpingState(this),
                 new FallingState(this),
                 new SlidingState(this),
-                new VaultingState(this)
+                new VaultingState(this),
+                new ClimbingUpState(this),
             };
             PlayerInput = new MyInputActions();
 
@@ -119,6 +136,7 @@ namespace Player
             PlayerInput.Player.Look.performed += OnLook; // OnLook은 카메라 직접 제어
             PlayerInput.Player.Jump.performed += OnJumpInput;
             PlayerInput.Player.Crouch.performed += OnCrouchInput;
+            PlayerInput.Player.Attack.performed += OnAttackInput;
 
             OriginalPlayerLayer = gameObject.layer;
             StandingColliderHeight = CharacterControllerComponent.height;
@@ -167,6 +185,14 @@ namespace Player
             if (callback.performed)
             {
                 CrouchActive = !CrouchActive;
+            }
+        }
+
+        void OnAttackInput(InputAction.CallbackContext callback)
+        {
+            if (callback.performed)
+            {
+                FindFirstObjectByType<EnemyController>().Impact(new Vector3(40, 100, 0));
             }
         }
         #endregion

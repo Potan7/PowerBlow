@@ -10,5 +10,6 @@ namespace Player.State
         Falling,
         Sliding,
         Vaulting,
+        ClimbingUp,
     }
 }
