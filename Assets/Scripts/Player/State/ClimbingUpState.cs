@@ -2,21 +2,19 @@ using UnityEngine;
 
 namespace Player.State
 {
-    public class ClimbingUpState : IPlayerState
+    public class ClimbingUpState : PlayerStateEntity
     {
-        private PlayerController _player;
         private Vector3 _climbStartPosition;
         private Vector3 _climbOverPosition; // 장애물 바로 위 가장자리
         private Vector3 _climbEndPosition;   // 장애물 위 안전한 착지 지점
-        private float _climbDuration = 1.0f; // 기어오르기 지속 시간 (조정 가능)
+        private float _climbDuration = 0.7f; // 기어오르기 지속 시간 (조정 가능)
         private float _startTime;
 
-        public ClimbingUpState(PlayerController player)
+        public ClimbingUpState(PlayerController player) : base(player)
         {
-            _player = player;
         }
 
-        public void Enter()
+        public override void Enter()
         {
             _player.IsVaultingInternal = true; // 유사한 플래그 사용 또는 별도 플래그 추가 가능
             _player.gameObject.layer = _player.vaultLayerMask; // 충돌 방지 레이어
@@ -33,12 +31,9 @@ namespace Player.State
             // MovingState에서 이 값들을 올바르게 설정해야 함
             _climbOverPosition = _player.VaultUpPosition; // 장애물 위 가장자리 (MovingState에서 계산된 값)
             _climbEndPosition = _player.VaultEndPosition;   // 장애물 위 최종 착지 지점 (MovingState에서 계산된 값)
-
-            // 장애물 높이와 깊이에 따라 _climbDuration을 동적으로 설정할 수도 있음
-            // 예: _climbDuration = _player.baseVaultDuration + (_player.VaultEndPosition - _player.VaultStartPosition).magnitude * 0.2f;
         }
 
-        public void Execute()
+        public override void Execute()
         {
             float elapsed = Time.time - _startTime;
             float progress = Mathf.Clamp01(elapsed / _climbDuration);
@@ -67,13 +62,13 @@ namespace Player.State
                 }
                 else
                 {
-                    // 만약을 위해 Falling 상태로 전환 (이론상으로는 땅에 있어야 함)
+                    // 만약을 위해 Falling 상태로 전환 (원래는 땅에 있는게 맞음)
                     _player.TransitionToState(PlayerState.Falling);
                 }
             }
         }
 
-        public void Exit()
+        public override void Exit()
         {
             _player.IsVaultingInternal = false;
             _player.gameObject.layer = _player.OriginalPlayerLayer;

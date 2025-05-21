@@ -20,6 +20,7 @@ namespace Player
         readonly int fowardMovingHash = Animator.StringToHash("forwardMoveState");
         readonly int rightMovingHash = Animator.StringToHash("rightMoveState");
         readonly int isVaultingHash = Animator.StringToHash("isVaulting");
+        readonly int isClimbingUpHash = Animator.StringToHash("climbing");
 
         public void SetAnim(PlayerState state, bool value = true)
         {
@@ -42,6 +43,19 @@ namespace Player
                     break;
                 case PlayerState.Vaulting:
                     animator.SetBool(isVaultingHash, value);
+                    break;
+                case PlayerState.ClimbingUp:
+                    animator.SetFloat(isClimbingUpHash, value ? 1 : 0);
+                    break;
+            }
+        }
+
+        public void SetAnim(PlayerState state, float value)
+        {
+            switch (state)
+            {
+                case PlayerState.ClimbingUp:
+                    animator.SetFloat(isClimbingUpHash, value);
                     break;
             }
         }

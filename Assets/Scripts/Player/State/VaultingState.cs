@@ -2,16 +2,13 @@ using UnityEngine;
 
 namespace Player.State
 {
-    public class VaultingState : IPlayerState
+    public class VaultingState : PlayerStateEntity
     {
-        private PlayerController _player;
-
-        public VaultingState(PlayerController player)
+        public VaultingState(PlayerController player) : base(player)
         {
-            _player = player;
         }
 
-        public void Enter()
+        public override void Enter()
         {
             _player.IsVaultingInternal = true; // PlayerController의 플래그와 동기화
             _player.gameObject.layer = _player.vaultLayerMask;
@@ -22,7 +19,7 @@ namespace Player.State
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Vaulting, true); // 뛰어넘기 애니메이션 트리거
         }
 
-        public void Execute()
+        public override void Execute()
         {
             float elapsed = Time.time - _player.VaultStartTime;
             float progress = Mathf.Clamp01(elapsed / _player.CurrentVaultDuration);
@@ -54,7 +51,7 @@ namespace Player.State
             }
         }
 
-        public void Exit()
+        public override void Exit()
         {
             _player.IsVaultingInternal = false;
             _player.gameObject.layer = _player.OriginalPlayerLayer;

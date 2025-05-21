@@ -2,16 +2,13 @@ using UnityEngine;
 
 namespace Player.State
 {
-    public class SlidingState : IPlayerState
+    public class SlidingState : PlayerStateEntity
     {
-        private PlayerController _player;
-
-        public SlidingState(PlayerController player)
+        public SlidingState(PlayerController player) : base(player)
         {
-            _player = player;
         }
 
-        public void Enter()
+        public override void Enter()
         {
             // 슬라이딩 시작 시 초기 속도 설정 (oldController의 StartSliding)
             Vector3 worldMoveDir = _player.transform.TransformDirection(new Vector3(_player.MoveInput.x, 0, _player.MoveInput.y)).normalized;
@@ -36,7 +33,7 @@ namespace Player.State
             _player.ChangeViewAndCollider(true); // 슬라이딩 뷰로 변경
         }
 
-        public void Execute()
+        public override void Execute()
         {
             // 1. 지상 상태 확인: 공중에 뜨면 FallingState로 전환
             if (!_player.CharacterControllerComponent.isGrounded)
@@ -95,7 +92,7 @@ namespace Player.State
             _player.CharacterControllerComponent.Move(horizontalMovement + verticalMovement);
         }
 
-        public void Exit()
+        public override void Exit()
         {
             // Debug.Log("Exiting Sliding State");
             // 슬라이딩 애니메이션 비활성화

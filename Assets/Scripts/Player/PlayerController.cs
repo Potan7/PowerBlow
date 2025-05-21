@@ -39,8 +39,8 @@ namespace Player
         private Collider[] _overlapResults = new Collider[5]; // OverlapBoxNonAlloc 결과 저장용
 
         // --- 상태 패턴 관련 ---
-        private IPlayerState _currentState = null;
-        private IPlayerState[] _states; // 상태 인스턴스 배열 (상태 전환 시 사용)
+        private PlayerStateEntity _currentState = null;
+        private PlayerStateEntity[] _states; // 상태 인스턴스 배열 (상태 전환 시 사용)
         public PlayerState CurrentStateType { get; private set; } // 애니메이터나 UI 등에서 현재 상태 종류를 쉽게 알 수 있도록
 
         // --- 내부 요청 플래그 (상태 클래스에서 사용) ---
@@ -88,6 +88,16 @@ namespace Player
         public float vaultHeightMultiplier = 0.3f;
         public float CurrentVaultDuration { get; set; }
         public float CurrentVaultJumpHeight { get; set; }
+
+        [Header("Attack")]
+        public float attackRange = 1.5f;
+        public float attackPower = 10f;
+        public float attackCooldown = 1f;
+        public float attackMinChargeTime = 0.5f;
+        public float attackMaxChargeTime = 2f;
+        private float attackChargeTime = 0f;
+        private bool isAttackCharging = false;
+        private readonly Collider[] _attackOverlapResults = new Collider[20]; // OverlapSphereNonAlloc 결과 저장용
         #endregion
 
         #region Unity Methods
@@ -97,7 +107,7 @@ namespace Player
             PlayerAnimatorComponent = GetComponentInChildren<PlayerAnimator>();
 
             // 상태 인스턴스 생성
-            _states = new IPlayerState[]
+            _states = new PlayerStateEntity[]
             {
                 new IdleState(this),
                 new MovingState(this),
@@ -125,6 +135,11 @@ namespace Player
         {
             // 현재 상태의 Execute 메서드 호출
             _currentState?.Execute();
+
+            if (isAttackCharging && attackChargeTime < attackMaxChargeTime)
+            {
+                attackChargeTime += Time.deltaTime;
+            }
         }
         #endregion
 
@@ -137,6 +152,7 @@ namespace Player
             PlayerInput.Player.Jump.performed += OnJumpInput;
             PlayerInput.Player.Crouch.performed += OnCrouchInput;
             PlayerInput.Player.Attack.performed += OnAttackInput;
+            PlayerInput.Player.Attack.canceled += OnAttackInput;
 
             OriginalPlayerLayer = gameObject.layer;
             StandingColliderHeight = CharacterControllerComponent.height;
@@ -192,7 +208,41 @@ namespace Player
         {
             if (callback.performed)
             {
-                FindFirstObjectByType<EnemyController>().Impact(new Vector3(40, 100, 0));
+                isAttackCharging = true;
+                attackChargeTime = 0f;
+                Debug.Log("Attack Input Started");
+            }
+            else if (callback.canceled)
+            {
+                isAttackCharging = false;
+                if (attackChargeTime >= attackMinChargeTime)
+                {
+                    // Perform attack logic here
+                    Debug.Log("Attack performed with charge time: " + attackChargeTime);
+
+                    var hitCount = Physics.OverlapSphereNonAlloc(transform.position, attackRange * attackChargeTime, _attackOverlapResults);
+
+                    for (int i = 0; i < hitCount; i++)
+                    {
+                        Collider hitCollider = _attackOverlapResults[i];
+                        if (hitCollider.CompareTag("Enemy"))
+                        {
+                            EnemyController enemyController = hitCollider.GetComponent<EnemyController>();
+
+                            // 플레이어 -> 적 방향으로 힘 가하기
+                            Vector3 direction = (hitCollider.   transform.position - transform.position).normalized;
+                            // 약간 윗방향으로 올리기
+                            direction.y += 0.5f;
+                            enemyController.Impact(attackChargeTime * attackPower * direction);
+                        }
+                    }
+
+                }
+                else
+                {
+                    Debug.Log("Attack too weak, not performed");
+                }
+                attackChargeTime = 0f;
             }
         }
         #endregion

@@ -2,16 +2,13 @@ using UnityEngine;
 
 namespace Player.State
 {
-    public class IdleState : IPlayerState
+    public class IdleState : PlayerStateEntity
     {
-        private PlayerController _player;
-
-        public IdleState(PlayerController player)
+        public IdleState(PlayerController player) : base(player)
         {
-            _player = player;
         }
 
-        public void Enter()
+        public override void Enter()
         {
             // Idle 상태에 맞는 애니메이션 설정
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Moving, false);
@@ -25,7 +22,7 @@ namespace Player.State
             // 만약 Idle에서 바로 웅크린 자세를 취하려면 여기서 CrouchActive를 확인하고 콜라이더 변경 등을 수행해야 합니다.
         }
 
-        public void Execute()
+        public override void Execute()
         {
             // 1. 지상 상태 유지 및 중력 처리: 땅에 붙어있도록 하고, 혹시 공중에 뜨면 중력 적용
             if (!_player.CharacterControllerComponent.isGrounded)
@@ -69,7 +66,7 @@ namespace Player.State
             _player.CharacterControllerComponent.Move(verticalMovement);
         }
 
-        public void Exit()
+        public override void Exit()
         {
             // Debug.Log("Exiting Idle State");
             // 특별히 정리할 내용이 없다면 비워둡니다.

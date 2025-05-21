@@ -284,11 +284,6 @@ Mesh:
     offset: 0
     size: 0
     path: 
---- !u!54 &76817054 stripped
-Rigidbody:
-  m_CorrespondingSourceObject: {fileID: 353765739234225646, guid: a88a5d6a61e25a246ba6a4a3da31904f, type: 3}
-  m_PrefabInstance: {fileID: 230159423}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &222636780
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -529,7 +524,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 353765739234225646, guid: a88a5d6a61e25a246ba6a4a3da31904f, type: 3}
       propertyPath: m_Mass
-      value: 3
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 917482907926774688, guid: a88a5d6a61e25a246ba6a4a3da31904f, type: 3}
       propertyPath: m_Mass
@@ -554,6 +549,10 @@ PrefabInstance:
     - target: {fileID: 5294221357530143632, guid: a88a5d6a61e25a246ba6a4a3da31904f, type: 3}
       propertyPath: m_Mass
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5682087508224885497, guid: a88a5d6a61e25a246ba6a4a3da31904f, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5740875128459745046, guid: a88a5d6a61e25a246ba6a4a3da31904f, type: 3}
       propertyPath: m_Mass
@@ -610,6 +609,10 @@ PrefabInstance:
     - target: {fileID: 7812838411427060207, guid: a88a5d6a61e25a246ba6a4a3da31904f, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7812838411427060207, guid: a88a5d6a61e25a246ba6a4a3da31904f, type: 3}
+      propertyPath: m_TagString
+      value: Enemy
       objectReference: {fileID: 0}
     - target: {fileID: 8199664700604121406, guid: a88a5d6a61e25a246ba6a4a3da31904f, type: 3}
       propertyPath: m_Mass
@@ -1662,7 +1665,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -25.49, y: 1.65, z: -22.476715}
-  m_LocalScale: {x: 1, y: 0.54, z: 1}
+  m_LocalScale: {x: 1, y: 0.34891024, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 862909253}
@@ -7068,6 +7071,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 862909253}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!54 &1752790177 stripped
+Rigidbody:
+  m_CorrespondingSourceObject: {fileID: 4089139084413787060, guid: a88a5d6a61e25a246ba6a4a3da31904f, type: 3}
+  m_PrefabInstance: {fileID: 230159423}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1808173805 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 7812838411427060207, guid: a88a5d6a61e25a246ba6a4a3da31904f, type: 3}
@@ -7107,7 +7115,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 21b78274ebeb72d4caaeeb1023a0ded3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ragdollSpineRigidbody: {fileID: 76817054}
+  ragdollSpineRigidbody: {fileID: 1752790177}
   disableRagdollDelay: 4
   moveSpeed: 5
   playerFindDistance: 10
@@ -7774,6 +7782,7 @@ MonoBehaviour:
   vaultableLayers:
     serializedVersion: 2
     m_Bits: 8
+  maxVaultableDepth: 3
   baseVaultDuration: 0.4
   vaultDurationPerMeterDepth: 0.15
   vaultDurationPerMeterHeight: 0.1
@@ -7781,6 +7790,11 @@ MonoBehaviour:
   maxVaultDuration: 0.8
   minVaultClearance: 0.15
   vaultHeightMultiplier: 0.3
+  attackRange: 1.5
+  attackPower: 50
+  attackCooldown: 1
+  attackMinChargeTime: 0.5
+  attackMaxChargeTime: 2
 --- !u!143 &6139434963097583414
 CharacterController:
   m_ObjectHideFlags: 0

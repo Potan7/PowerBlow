@@ -2,32 +2,25 @@ using UnityEngine;
 
 namespace Player.State
 {
-    public class FallingState : IPlayerState
+    public class FallingState : PlayerStateEntity
     {
-        private PlayerController _player;
-
-        // 생성자: PlayerController 참조를 받아 초기화합니다.
-        public FallingState(PlayerController player)
+        public FallingState(PlayerController player) : base(player)
         {
-            _player = player;
         }
 
+
         // 상태 진입 시 호출되는 메서드
-        public void Enter()
+        public override void Enter()
         {
             // Debug.Log("Entering Falling State");
             // 낙하 애니메이션 활성화
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Falling, true);
 
-            // 공중에 있을 때는 슬라이딩 상태나 웅크리기 요청을 해제하는 것이 일반적입니다.
-            // (oldController의 HandleAirborneLogic 참조)
             _player.CurrentSlidingVelocity = Vector3.zero; // 혹시 모를 슬라이딩 속도 초기화
-            // _player.CrouchActive = false; // CrouchActive는 점프 시작 시 또는 다른 상태에서 해제될 수 있음
-                                         // Falling 진입 시점에 항상 false로 할지 여부는 게임 디자인에 따라 결정
         }
 
         // 매 프레임 호출되는 메서드 (상태의 주요 로직)
-        public void Execute()
+        public override void Execute()
         {
             // 1. 중력 적용: 수직 속도에 중력을 계속 더해줍니다.
             _player.VerticalVelocity += Physics.gravity.y * Time.deltaTime;
@@ -50,11 +43,11 @@ namespace Player.State
             }
 
 
-            // 3. 최종 이동 적용: 수평 이동과 수직 이동(중력)을 합쳐 CharacterController에 적용합니다.
+            // 3. 최종 이동 적용: 수평 이동과 수직 이동(중력)을 합쳐 CharacterController에 적용
             Vector3 verticalMovement = Vector3.up * _player.VerticalVelocity * Time.deltaTime;
             _player.CharacterControllerComponent.Move(horizontalMovement + verticalMovement);
 
-            // 4. 착지 감지: CharacterController가 땅에 닿았는지 확인합니다.
+            // 4. 착지 감지: CharacterController가 땅에 닿았는지 확인
             if (_player.CharacterControllerComponent.isGrounded)
             {
                 // 땅에 닿았다면 착지 처리 및 상태 전환
@@ -63,7 +56,7 @@ namespace Player.State
         }
 
         // 상태 종료 시 호출되는 메서드
-        public void Exit()
+        public override void Exit()
         {
             // Debug.Log("Exiting Falling State");
             // 낙하 애니메이션 비활성화
@@ -92,10 +85,6 @@ namespace Player.State
                 {
                     _player.TransitionToState(PlayerState.Idle);
                 }
-                // 만약 착지 시 웅크리기 버튼만 눌려있고 이동 입력이 없다면, 웅크리기 상태를 해제할 수 있습니다.
-                // (oldController: if (crouchActive) crouchActive = false;)
-                // 이 로직은 게임 디자인에 따라 IdleState의 Enter에서 처리하거나 여기서 직접 CrouchActive를 false로 설정할 수 있습니다.
-                // 여기서는 CrouchActive 상태를 유지하고, 각 상태에서 웅크리기 해제 조건을 명확히 하는 것을 선호합니다.
             }
         }
     }

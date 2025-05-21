@@ -2,16 +2,13 @@ using UnityEngine;
 
 namespace Player.State
 {
-    public class JumpingState : IPlayerState
+    public class JumpingState : PlayerStateEntity
     {
-        private PlayerController _player;
-
-        public JumpingState(PlayerController player)
+        public JumpingState(PlayerController player) : base(player)
         {
-            _player = player;
         }
 
-        public void Enter()
+        public override void Enter()
         {
             // 점프 시작 시 수직 속도 설정 (oldController의 ProcessJump)
             _player.VerticalVelocity = _player.jumpPower;
@@ -27,7 +24,7 @@ namespace Player.State
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Sliding, false);
         }
 
-        public void Execute()
+        public override void Execute()
         {
             // 1. 중력 적용: 점프 후에는 계속 중력의 영향을 받음
             _player.VerticalVelocity += Physics.gravity.y * Time.deltaTime;
@@ -66,7 +63,7 @@ namespace Player.State
             // }
         }
 
-        public void Exit()
+        public override void Exit()
         {
             // Debug.Log("Exiting Jumping State");
             // JumpingState를 나갈 때 점프 애니메이션을 명시적으로 false로 할 필요는 없음 (Trigger 방식이므로)

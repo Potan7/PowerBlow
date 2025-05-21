@@ -2,25 +2,23 @@ using UnityEngine;
 
 namespace Player.State
 {
-    public class MovingState : IPlayerState
+    public class MovingState : PlayerStateEntity
     {
-        private PlayerController _player;
         // private const float VaultMargin = 0.1f; // VaultEndPosition 계산 시 장애물로부터의 여유 공간
         private const float ClimbUpClearance = 0.5f; // 기어오르기 시 장애물 위에서의 전방 여유 공간
 
-        public MovingState(PlayerController player)
+        public MovingState(PlayerController player) : base(player)
         {
-            _player = player;
         }
 
-        public void Enter()
+        public override void Enter()
         {
             // 이동 애니메이션 활성화
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Moving, true);
             _player.JumpRequested = false; // Moving 상태 진입 시 점프 요청 초기화
         }
 
-        public void Execute()
+        public override void Execute()
         {
             // 1. 지상 상태 유지 및 중력 처리
             if (!_player.CharacterControllerComponent.isGrounded)
@@ -136,9 +134,9 @@ namespace Player.State
 
                 if (obstacleHeight < _player.CharacterControllerComponent.height * _player.canVaultHeightRatio && obstacleHeight > 0.1f) // 너무 낮거나 높지 않은 장애물
                 {
-                    float obstacleDepth = _player.CalculateObstacleDepth(hitInfo); // PlayerController에 있는 메서드 사용
+                    float obstacleDepth = _player.CalculateObstacleDepth(hitInfo);
 
-                     Debug.Log($"Calculated Obstacle Depth: {obstacleDepth}, Max Vaultable Depth: {_player.maxVaultableDepth}"); // 로그 추가
+                     Debug.Log($"Calculated Obstacle Depth: {obstacleDepth}, Max Vaultable Depth: {_player.maxVaultableDepth}");
 
                     if (obstacleDepth < _player.maxVaultableDepth) // 일반 뛰어넘기 조건
                     {
@@ -190,7 +188,7 @@ namespace Player.State
         }
 
 
-        public void Exit()
+        public override void Exit()
         {
             // 이동 애니메이션 비활성화
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Moving, false);
