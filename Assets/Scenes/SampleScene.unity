@@ -7790,7 +7790,7 @@ MonoBehaviour:
   maxVaultDuration: 0.8
   minVaultClearance: 0.15
   vaultHeightMultiplier: 0.3
-  attackRange: 1.5
+  attackRange: 3
   attackPower: 50
   attackCooldown: 1
   attackMinChargeTime: 0.5

@@ -127,6 +127,7 @@ public class EnemyController : MonoBehaviour
 
     IEnumerator DisableRagdoll(float delay)
     {
+        yield return new WaitUntil(() => _characterController.isGrounded);
         yield return new WaitForSeconds(delay);
 
         transform.position = ragdollSpineRigidbody.position;

@@ -21,6 +21,7 @@ namespace Player
         readonly int rightMovingHash = Animator.StringToHash("rightMoveState");
         readonly int isVaultingHash = Animator.StringToHash("isVaulting");
         readonly int isClimbingUpHash = Animator.StringToHash("climbing");
+        readonly int isAttackingHash = Animator.StringToHash("isAttacking");
 
         public void SetAnim(PlayerState state, bool value = true)
         {
@@ -64,6 +65,11 @@ namespace Player
         {
             animator.SetFloat(fowardMovingHash, direction.y);
             animator.SetFloat(rightMovingHash, direction.x);
+        }
+
+        public void TriggerAttack()
+        {
+            animator.SetTrigger(isAttackingHash);
         }
 
         void OnFootstep(AnimationEvent animationEvent)

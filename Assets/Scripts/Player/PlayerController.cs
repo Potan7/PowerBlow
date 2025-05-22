@@ -219,6 +219,7 @@ namespace Player
                 {
                     // Perform attack logic here
                     Debug.Log("Attack performed with charge time: " + attackChargeTime);
+                    PlayerAnimatorComponent.TriggerAttack();
 
                     var hitCount = Physics.OverlapSphereNonAlloc(transform.position, attackRange * attackChargeTime, _attackOverlapResults);
 
