@@ -6,6 +6,7 @@ namespace Player
     public class PlayerAnimator : MonoBehaviour
     {
         Animator animator;
+        public ParticleSystem shockwaveParticle;
 
         private void Awake()
         {
@@ -70,6 +71,7 @@ namespace Player
         public void TriggerAttack()
         {
             animator.SetTrigger(isAttackingHash);
+            shockwaveParticle.Play();
         }
 
         void OnFootstep(AnimationEvent animationEvent)
