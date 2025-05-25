@@ -24,6 +24,8 @@ namespace Player
         #endregion
 
         #region Variables
+        public PlayerUIManager PlayerUIComponent; // UI 매니저 인스턴스
+
         // -- 카메라 관련 변수 --
         [Header("Camera and Reference")]
         public Transform head;
@@ -97,7 +99,51 @@ namespace Player
         public float attackMaxChargeTime = 2f;
         private float attackChargeTime = 0f;
         private bool isAttackCharging = false;
+
         private readonly Collider[] _attackOverlapResults = new Collider[20]; // OverlapSphereNonAlloc 결과 저장용
+
+        [Header("Stat")]
+        [SerializeField]
+        private int health;
+        public int Health
+        {
+            get => health;
+            set
+            {
+                if (value < health)
+                {
+                    if (invincibilityTimer > 0f) return;
+                    // 체력이 감소할 때 무적 시간 초기화
+                    invincibilityTimer = invincibilityDuration;
+                }
+
+                health = Mathf.Clamp(value, 0, maxHealth);
+                if (health <= warningHp)
+                {
+                    // 체력이 경고 이하로 떨어졌을 때 처리 로직
+                    PlayerUIComponent.SetLowHpWarningVisibility(true);
+                }
+                else
+                {
+                    // 체력이 경고 이상으로 회복되면 경고 UI 숨김
+                    PlayerUIComponent.SetLowHpWarningVisibility(false);
+                }
+
+                if (health <= 0)
+                {
+                    // 플레이어 사망 처리
+                    Debug.Log("Player has died.");
+                }
+            }
+        }
+        public int maxHealth = 100;
+        public int warningHp = 30;
+        public int enemyDamage = 10;
+        public float regenerationCooldown = 5f; // 재생 대기 시간
+        public int regenerationAmount = 1; // 재생량
+        private float regenerationTimer = 0f; // 재생 타이머
+        public float invincibilityDuration = 0.5f; // 무적 시간
+        private float invincibilityTimer = 0f; // 무적 타이머
         #endregion
 
         #region Unity Methods
@@ -105,6 +151,8 @@ namespace Player
         {
             CharacterControllerComponent = GetComponent<CharacterController>();
             PlayerAnimatorComponent = GetComponentInChildren<PlayerAnimator>();
+
+            health = maxHealth;
 
             // 상태 인스턴스 생성
             _states = new PlayerStateEntity[]
@@ -139,6 +187,33 @@ namespace Player
             if (isAttackCharging && attackChargeTime < attackMaxChargeTime)
             {
                 attackChargeTime += Time.deltaTime;
+            }
+
+            if (Health < maxHealth && regenerationTimer <= 0f)
+            {
+                // 체력이 재생 대기 시간 이상으로 감소했을 때 재생 시작
+                Health = Mathf.Min(maxHealth, Health + regenerationAmount);
+                // Debug.Log($"Health regenerated to {Health}");
+            }
+            else if (regenerationTimer > 0f)
+            {
+                regenerationTimer -= Time.deltaTime;
+            }
+
+            if (invincibilityTimer > 0f)
+            {
+                invincibilityTimer -= Time.deltaTime;
+            }
+        }
+
+        void OnControllerColliderHit(ControllerColliderHit hit)
+        {
+            if (hit.collider.CompareTag("Enemy"))
+            {
+                // 적과 충돌 시 처리 로직
+                Debug.Log("Hit by enemy attack!");
+                Health -= enemyDamage;
+                regenerationTimer = regenerationCooldown;
             }
         }
         #endregion

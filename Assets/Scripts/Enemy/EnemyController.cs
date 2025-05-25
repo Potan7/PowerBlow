@@ -5,11 +5,21 @@ using UnityEngine.AI;
 
 public class EnemyController : MonoBehaviour
 {
+    public enum EnemyState
+    {
+        Idle,
+        Moving,
+        Attacking,
+        Ragdoll
+    }
+
     Animator _animator;
     CharacterController _characterController;
     NavMeshAgent _navMeshAgent;
 
     public Rigidbody ragdollSpineRigidbody;
+
+    EnemyState currentState = EnemyState.Idle;
 
     private Collider[] ragdollColliders;
     private Rigidbody[] ragdollRigidbodies;
@@ -27,6 +37,7 @@ public class EnemyController : MonoBehaviour
     int animatorImpactHash = Animator.StringToHash("impact");
     int animatorIsMovingHash = Animator.StringToHash("isMoving");
     int animatorGetupHash = Animator.StringToHash("getUp");
+    int animatorIsAttackingHash = Animator.StringToHash("isAttacking");
 
 
     void Start()
@@ -69,14 +80,24 @@ public class EnemyController : MonoBehaviour
         {
             Vector3 playerPos = PlayerController.Instance.transform.position;
             float distance = Vector3.Distance(transform.position, playerPos);
-            if (distance < playerFindDistance)
+            if (distance < playerAttackDistance)
+            {
+                // 플레이어와 가까워지면 공격 상태로 전환
+                _animator.SetBool(animatorIsMovingHash, false);
+                _animator.SetBool(animatorIsAttackingHash, true);
+                currentState = EnemyState.Attacking;
+                _navMeshAgent.ResetPath();
+            }
+            else if (distance < playerFindDistance)
             {
                 // 플레이어를 찾음
                 _animator.SetBool(animatorIsMovingHash, true);
+                currentState = EnemyState.Moving;
                 _navMeshAgent.SetDestination(playerPos);
             }
             else
             {
+                currentState = EnemyState.Idle;
                 _navMeshAgent.ResetPath();
                 _animator.SetBool(animatorIsMovingHash, false);
             }
@@ -115,6 +136,7 @@ public class EnemyController : MonoBehaviour
             disableRagdollCoroutine = null;
         }
         SetRagdollActive(true);
+        currentState = EnemyState.Ragdoll;
 
         ragdollSpineRigidbody.AddForce(force, ForceMode.Impulse);
         disableRagdollCoroutine = StartCoroutine(DisableRagdoll(disableRagdollDelay));
@@ -180,7 +202,7 @@ public class EnemyController : MonoBehaviour
 
         // SetRagdollActive(false)를 호출하기 전에 애니메이션 트리거를 설정하여
         // 애니메이터가 활성화될 때 바로 애니메이션을 재생하도록 합니다.
-        _animator.SetTrigger(animatorImpactHash); 
+        _animator.SetTrigger(animatorImpactHash);
 
         SetRagdollActive(false); // 여기서 CharacterController와 Animator가 활성화됩니다.
 
@@ -190,7 +212,8 @@ public class EnemyController : MonoBehaviour
         // 예를 들어, 일어서는 애니메이션의 길이를 알고 있다면 그만큼 더 기다립니다.
         // float getUpAnimationDuration = _animator.GetCurrentAnimatorStateInfo(0).length; // 현재 상태 길이를 가져오는 것은 복잡할 수 있음
         yield return new WaitForSeconds(getUpAnimationDuration);
-    
+
         _navMeshAgent.enabled = true; // NavMeshAgent 활성화
+        currentState = EnemyState.Idle; // 상태를 Idle로 변경
     }
 }
