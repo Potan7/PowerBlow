@@ -31,6 +31,8 @@ public class EnemyController : MonoBehaviour
     public float playerFindDistance = 10f;
     public float playerAttackDistance = 2f;
 
+    public Collider[] attackColliders;
+
     public Vector3 debugForce;
 
     // int _animatorIsRagdollHash = Animator.StringToHash("isRagdoll");
@@ -65,6 +67,7 @@ public class EnemyController : MonoBehaviour
     {
         if (transform.position.y < -10f)
         {
+            PlayerController.Instance.EnemyIsDead();
             Destroy(gameObject);
             return;
         }
@@ -92,6 +95,7 @@ public class EnemyController : MonoBehaviour
             {
                 // 플레이어를 찾음
                 _animator.SetBool(animatorIsMovingHash, true);
+                _animator.SetBool(animatorIsAttackingHash, false);
                 currentState = EnemyState.Moving;
                 _navMeshAgent.SetDestination(playerPos);
             }
@@ -100,6 +104,12 @@ public class EnemyController : MonoBehaviour
                 currentState = EnemyState.Idle;
                 _navMeshAgent.ResetPath();
                 _animator.SetBool(animatorIsMovingHash, false);
+                _animator.SetBool(animatorIsAttackingHash, false);
+            }
+
+            for (int i = 0; i < attackColliders.Length; i++)
+            {
+                attackColliders[i].enabled = currentState == EnemyState.Attacking;
             }
         }
         
@@ -130,6 +140,7 @@ public class EnemyController : MonoBehaviour
 
     public void Impact(Vector3 force)
     {
+        Debug.Log("Impact with force: " + force);
         if (disableRagdollCoroutine != null)
         {
             StopCoroutine(disableRagdollCoroutine);

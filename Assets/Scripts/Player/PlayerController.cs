@@ -100,7 +100,7 @@ namespace Player
         private float attackChargeTime = 0f;
         private bool isAttackCharging = false;
 
-        private readonly Collider[] _attackOverlapResults = new Collider[20]; // OverlapSphereNonAlloc 결과 저장용
+        private readonly Collider[] _attackOverlapResults = new Collider[30]; // OverlapSphereNonAlloc 결과 저장용
 
         [Header("Stat")]
         [SerializeField]
@@ -141,7 +141,7 @@ namespace Player
         public int enemyDamage = 10;
         public float regenerationCooldown = 5f; // 재생 대기 시간
         public int regenerationAmount = 1; // 재생량
-        private float regenerationTimer = 0f; // 재생 타이머
+        internal float regenerationTimer = 0f; // 재생 타이머
         public float invincibilityDuration = 0.5f; // 무적 시간
         private float invincibilityTimer = 0f; // 무적 타이머
         #endregion
@@ -187,6 +187,7 @@ namespace Player
             if (isAttackCharging && attackChargeTime < attackMaxChargeTime)
             {
                 attackChargeTime += Time.deltaTime;
+                PlayerUIComponent.SetSkillBarCharge(attackChargeTime / attackMaxChargeTime);
             }
 
             if (Health < maxHealth && regenerationTimer <= 0f)
@@ -203,17 +204,6 @@ namespace Player
             if (invincibilityTimer > 0f)
             {
                 invincibilityTimer -= Time.deltaTime;
-            }
-        }
-
-        void OnControllerColliderHit(ControllerColliderHit hit)
-        {
-            if (hit.collider.CompareTag("Enemy"))
-            {
-                // 적과 충돌 시 처리 로직
-                Debug.Log("Hit by enemy attack!");
-                Health -= enemyDamage;
-                regenerationTimer = regenerationCooldown;
             }
         }
         #endregion
@@ -281,6 +271,12 @@ namespace Player
 
         void OnAttackInput(InputAction.CallbackContext callback)
         {
+            if (PlayerUIComponent.isCooldownActive || (callback.canceled && !isAttackCharging))
+            {
+                Debug.Log("Attack input ignored due to cooldown.");
+                return; // 공격 입력이 쿨타임 중이면 무시
+            }
+
             if (callback.performed)
             {
                 isAttackCharging = true;
@@ -296,28 +292,26 @@ namespace Player
                     Debug.Log("Attack performed with charge time: " + attackChargeTime);
                     PlayerAnimatorComponent.TriggerAttack();
 
-                    var hitCount = Physics.OverlapSphereNonAlloc(transform.position, attackRange * attackChargeTime, _attackOverlapResults);
+                    var hitCount = Physics.OverlapSphereNonAlloc(transform.position, attackRange * attackChargeTime, _attackOverlapResults, LayerMask.GetMask("Enemy"));
 
                     for (int i = 0; i < hitCount; i++)
                     {
                         Collider hitCollider = _attackOverlapResults[i];
-                        if (hitCollider.CompareTag("Enemy"))
+                        if (hitCollider.TryGetComponent(out EnemyController enemyController))
                         {
-                            EnemyController enemyController = hitCollider.GetComponent<EnemyController>();
-
                             // 플레이어 -> 적 방향으로 힘 가하기
-                            Vector3 direction = (hitCollider.   transform.position - transform.position).normalized;
+                            Vector3 direction = (hitCollider.transform.position - transform.position).normalized;
                             // 약간 윗방향으로 올리기
                             direction.y += 0.5f;
                             enemyController.Impact(attackChargeTime * attackPower * direction);
                         }
                     }
-
                 }
                 else
                 {
                     Debug.Log("Attack too weak, not performed");
                 }
+                PlayerUIComponent.SetSkillBarCooldown(attackCooldown);
                 attackChargeTime = 0f;
             }
         }
@@ -369,6 +363,11 @@ namespace Player
                 CharacterControllerComponent.height = StandingColliderHeight;
                 CharacterControllerComponent.center = new Vector3(0, StandingColliderCenterY, 0);
             }
+        }
+
+        public void EnemyIsDead()
+        {
+            PlayerUIComponent.AddEnemyDeadScore();
         }
         #endregion
     }

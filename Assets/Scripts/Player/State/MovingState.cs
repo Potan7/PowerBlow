@@ -72,12 +72,9 @@ namespace Player.State
                 return;
             }
 
-
-
-
             // 일반 이동 로직
             Vector3 moveDirection = _player.transform.TransformDirection(new Vector3(_player.MoveInput.x, 0, _player.MoveInput.y)).normalized;
-            Vector3 horizontalMovement = moveDirection * _player.moveSpeed * Time.deltaTime;
+            Vector3 horizontalMovement = _player.moveSpeed * Time.deltaTime * moveDirection;
 
             // 중력 적용
             if (!_player.CharacterControllerComponent.isGrounded)
@@ -169,13 +166,6 @@ namespace Player.State
 
                             // VaultEndPosition을 장애물 위 안전한 착지 지점으로 설정
                             _player.VaultEndPosition = _player.VaultUpPosition + _player.transform.forward * ClimbUpClearance; // 장애물 위에서 앞으로 약간 이동
-
-                            // ClimbingUp에 필요한 파라미터 설정 (Vaulting과 유사하게 또는 별도로)
-                            // 예: _player.CurrentClimbDuration = ...
-                            // 여기서는 ClimbingUpState의 Enter에서 고정된 _climbDuration을 사용하거나,
-                            // PlayerController에 CurrentClimbDuration 같은 속성을 추가하여 동적으로 설정할 수 있습니다.
-                            // 간단하게 Vaulting의 파라미터를 재활용하거나, ClimbingUpState에서 자체적으로 계산하도록 할 수 있습니다.
-                            // 여기서는 VaultUpPosition과 VaultEndPosition만 설정하고 ClimbingUpState에서 사용합니다.
 
                             _player.TransitionToState(PlayerState.ClimbingUp);
                             _player.JumpRequested = false;
