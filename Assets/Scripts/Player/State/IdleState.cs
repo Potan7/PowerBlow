@@ -55,14 +55,19 @@ namespace Player.State
                 return;
             }
 
-            // 4. 웅크리기(슬라이드) 버튼 활성화 시 처리:
-            // Idle 상태에서 웅크리기 버튼이 활성화되어도 바로 슬라이딩으로 가진 않음 (이동 입력이 없으므로).
-            // 만약 "CrouchIdle" 상태가 있다면 그쪽으로 전환할 수 있음.
-            // 현재 구조에서는 MovingState에서 CrouchActive와 MoveInput을 함께 확인하여 SlidingState로 전환.
-            // 여기서 CrouchActive가 true이고, 이후 MoveInput이 들어오면 MovingState를 거쳐 SlidingState로 감.
+            if (_player.CrouchActive)
+            {
+                _player.CrouchActive = false;
+            }
 
-            // 5. 최종 이동 적용: Idle 상태에서는 주로 수직 이동(중력에 의한 안정화)만 적용됨
-            Vector3 verticalMovement = Vector3.up * _player.VerticalVelocity * Time.deltaTime;
+            // 4. 웅크리기(슬라이드) 버튼 활성화 시 처리:
+                // Idle 상태에서 웅크리기 버튼이 활성화되어도 바로 슬라이딩으로 가진 않음 (이동 입력이 없으므로).
+                // 만약 "CrouchIdle" 상태가 있다면 그쪽으로 전환할 수 있음.
+                // 현재 구조에서는 MovingState에서 CrouchActive와 MoveInput을 함께 확인하여 SlidingState로 전환.
+                // 여기서 CrouchActive가 true이고, 이후 MoveInput이 들어오면 MovingState를 거쳐 SlidingState로 감.
+
+                // 5. 최종 이동 적용: Idle 상태에서는 주로 수직 이동(중력에 의한 안정화)만 적용됨
+                Vector3 verticalMovement = Vector3.up * _player.VerticalVelocity * Time.deltaTime;
             _player.CharacterControllerComponent.Move(verticalMovement);
         }
 
