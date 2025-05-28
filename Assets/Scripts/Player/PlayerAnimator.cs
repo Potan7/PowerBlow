@@ -1,3 +1,4 @@
+using System.Collections;
 using Player.State;
 using UnityEngine;
 
@@ -6,7 +7,10 @@ namespace Player
     public class PlayerAnimator : MonoBehaviour
     {
         Animator animator;
-        public ParticleSystem shockwaveParticle;
+        // public ParticleSystem shockwaveParticle;
+        public Transform attackOrb;
+        public float attackOrbSize = 4f;
+        public float attackOrbTime = 0.4f;
 
         private void Awake()
         {
@@ -71,12 +75,32 @@ namespace Player
         public void TriggerAttack()
         {
             animator.SetTrigger(isAttackingHash);
-            shockwaveParticle.Play();
+            // shockwaveParticle.Play();
+            StartCoroutine(AttackAnimCoroutine());
         }
 
         void OnFootstep(AnimationEvent animationEvent)
         {
 
+        }
+
+        IEnumerator AttackAnimCoroutine()
+        {
+            Vector3 size = Vector3.one * 0.5f;
+            Vector3 endSize = Vector3.one * attackOrbSize;
+            attackOrb.localScale = size;
+            attackOrb.gameObject.SetActive(true);
+            float time = 0;
+
+            while (time < attackOrbTime)
+            {
+                attackOrb.localScale = Vector3.Lerp(size, endSize, time / attackOrbTime);
+
+                time += Time.deltaTime;
+                yield return null;
+            }
+
+            attackOrb.gameObject.SetActive(false);
         }
 
     }
