@@ -20,26 +20,40 @@ namespace Player
             else
             {
                 Destroy(gameObject);
+                return;
             }
+            CharacterControllerComponent = GetComponent<CharacterController>();
+            PlayerAnimatorComponent = GetComponentInChildren<PlayerAnimator>();
+
+            PlayerUIComponent = FindAnyObjectByType<PlayerUIManager>();
+            PlayerInput = new MyInputActions();
         }
         #endregion
 
         #region Variables
-        public PlayerUIManager PlayerUIComponent; // UI 매니저 인스턴스
 
         // -- 카메라 관련 변수 --
-        [Header("Camera and Reference")]
+        [Header("Camera References")]
         public Transform head;
         public Transform cameraTransform;
         public CinemachineCamera cinemachineCamera;
 
+        [Header("Camera FOV Settings")]
+        public float idleFOV = 75f;
+        public float movingFOV = 80f;
+        private float _currentTargetFOV; // 부드러운 전환을 위한 목표 FOV
+        private float _fovChangeSpeed = 10f; // FOV 변경 속도
+        public GameObject speedParticle;
+
         // 이동 관련 변수
         public Vector2 MoveInput { get; private set; }
+        private Vector3 _lastGroundedPosition;
 
+        public PlayerUIManager PlayerUIComponent { get; private set; } // UI 매니저 인스턴스
         public MyInputActions PlayerInput { get; private set; }
         public CharacterController CharacterControllerComponent { get; private set; } // 상태 클래스에서 접근 가능하도록
         public PlayerAnimator PlayerAnimatorComponent { get; private set; } // 상태 클래스에서 접근 가능하도록
-        private Collider[] _overlapResults = new Collider[5]; // OverlapBoxNonAlloc 결과 저장용
+        // private Collider[] _overlapResults = new Collider[5]; // OverlapBoxNonAlloc 결과 저장용
 
         // --- 상태 패턴 관련 ---
         private PlayerStateEntity _currentState = null;
@@ -92,6 +106,12 @@ namespace Player
         public float CurrentVaultDuration { get; set; }
         public float CurrentVaultJumpHeight { get; set; }
 
+        [Header("Wall Climb Settings")] // 벽 타기 설정
+        public float wallClimbCheckDistance = 0.8f; // 벽 감지 거리
+        public float minWallClimbHeight = 0.5f;    // 최소 벽 타기 높이 (발 기준)
+        public float maxWallClimbHeight = 1.8f;    // 최대 벽 타기 높이 (발 기준)
+        public float wallClimbLedgeOffset = 0.5f;  // 벽을 오른 후 앞쪽으로 이동할 거리
+
         [Header("Attack")]
         public float attackRange = 1.5f;
         public float attackPower = 10f;
@@ -118,17 +138,8 @@ namespace Player
                     invincibilityTimer = invincibilityDuration;
                 }
 
+                PlayerUIComponent.PlayerHpChanged(value, health);
                 health = Mathf.Clamp(value, 0, maxHealth);
-                if (health <= warningHp)
-                {
-                    // 체력이 경고 이하로 떨어졌을 때 처리 로직
-                    PlayerUIComponent.SetLowHpWarningVisibility(true);
-                }
-                else
-                {
-                    // 체력이 경고 이상으로 회복되면 경고 UI 숨김
-                    PlayerUIComponent.SetLowHpWarningVisibility(false);
-                }
 
                 if (health <= 0)
                 {
@@ -150,8 +161,6 @@ namespace Player
         #region Unity Methods
         void Start()
         {
-            CharacterControllerComponent = GetComponent<CharacterController>();
-            PlayerAnimatorComponent = GetComponentInChildren<PlayerAnimator>();
 
             health = maxHealth;
 
@@ -166,17 +175,20 @@ namespace Player
                 new VaultingState(this),
                 new ClimbingUpState(this),
             };
-            PlayerInput = new MyInputActions();
 
-            Initialization();
+            OriginalPlayerLayer = gameObject.layer;
+            StandingColliderHeight = CharacterControllerComponent.height;
+            StandingColliderCenterY = CharacterControllerComponent.center.y;
 
-            PlayerInput.Enable();
+            
             // 마우스 설정
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
 
             // 초기 상태 설정
             TransitionToState(PlayerState.Idle);
+
+            FadeSystem.StartFadeOut(1.5f, () => PlayerInput.Enable());
         }
 
 
@@ -184,6 +196,23 @@ namespace Player
         {
             // 현재 상태의 Execute 메서드 호출
             _currentState?.Execute();
+
+            if (CharacterControllerComponent.isGrounded)
+            {
+                _lastGroundedPosition = transform.position; // 마지막 착지 위치 업데이트
+            }
+
+            if (transform.position.y < -10f)
+            {
+                // 플레이어가 너무 아래로 떨어지면 초기 위치로 리셋
+                transform.position = _lastGroundedPosition;
+                VerticalVelocity = 0f; // 수직 속도 초기화
+                Health -= enemyDamage; // 체력 감소
+                TransitionToState(PlayerState.Idle); // Idle 상태로 전환
+
+                JumpRequested = false;
+                CrouchActive = false; // 웅크리기 상태 초기화
+            }
 
             if (isAttackCharging && attackChargeTime < attackMaxChargeTime)
             {
@@ -206,23 +235,47 @@ namespace Player
             {
                 invincibilityTimer -= Time.deltaTime;
             }
-        }
-        #endregion
 
-        #region Initialization
-        void Initialization()
+            // 부드러운 FOV 변경 (선택적)
+            if (Mathf.Abs(cinemachineCamera.Lens.FieldOfView - _currentTargetFOV) > 0.01f)
+            {
+                cinemachineCamera.Lens.FieldOfView = Mathf.Lerp(cinemachineCamera.Lens.FieldOfView, _currentTargetFOV, Time.deltaTime * _fovChangeSpeed);
+            }
+        }
+
+        void OnEnable()
         {
-            PlayerInput.Player.Move.performed += ctx => MoveInput = ctx.ReadValue<Vector2>();
-            PlayerInput.Player.Move.canceled += ctx => MoveInput = Vector2.zero;
-            PlayerInput.Player.Look.performed += OnLook; // OnLook은 카메라 직접 제어
+            // 이벤트 구독
+            PlayerInput.Player.Move.performed += OnMoveInput;
+            PlayerInput.Player.Move.canceled += OnMoveInput;
+            PlayerInput.Player.Look.performed += OnLook;
             PlayerInput.Player.Jump.performed += OnJumpInput;
             PlayerInput.Player.Crouch.performed += OnCrouchInput;
             PlayerInput.Player.Attack.performed += OnAttackInput;
             PlayerInput.Player.Attack.canceled += OnAttackInput;
+            PlayerInput.Enable(); // 입력 활성화
+        }
 
-            OriginalPlayerLayer = gameObject.layer;
-            StandingColliderHeight = CharacterControllerComponent.height;
-            StandingColliderCenterY = CharacterControllerComponent.center.y;
+        void OnDisable()
+        {
+            PlayerInput.Disable();
+
+            PlayerInput.Player.Move.performed -= OnMoveInput;
+            PlayerInput.Player.Move.canceled -= OnMoveInput;
+            PlayerInput.Player.Look.performed -= OnLook;
+            PlayerInput.Player.Jump.performed -= OnJumpInput;
+            PlayerInput.Player.Crouch.performed -= OnCrouchInput;
+            PlayerInput.Player.Attack.performed -= OnAttackInput;
+            PlayerInput.Player.Attack.canceled -= OnAttackInput;
+        }
+
+
+        public void OnDestroy()
+        {
+            PlayerInput.Dispose();
+            PlayerInput = null;
+            if (Instance == this)
+                Instance = null;
         }
         #endregion
 
@@ -239,6 +292,11 @@ namespace Player
         #endregion
 
         #region Input Callbacks
+        void OnMoveInput(InputAction.CallbackContext callback)
+        {
+            MoveInput = callback.ReadValue<Vector2>();
+        }
+
         // OnMove는 SetupInputActions에서 직접 MoveInput 업데이트
         void OnLook(InputAction.CallbackContext callback)
         {
@@ -370,6 +428,24 @@ namespace Player
         public void EnemyIsDead()
         {
             PlayerUIComponent.AddEnemyDeadScore();
+        }
+
+        public void SetCameraFOV(float targetFOV, bool immediate = false)
+        {
+            _currentTargetFOV = targetFOV;
+            if (immediate)
+            {
+                cinemachineCamera.Lens.FieldOfView = targetFOV;
+            }
+
+            if (targetFOV == movingFOV)
+            {
+                speedParticle.SetActive(true);
+            }
+            else
+            {
+                speedParticle.SetActive(false);
+            }
         }
         #endregion
     }

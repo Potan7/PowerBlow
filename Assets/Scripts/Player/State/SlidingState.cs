@@ -31,6 +31,8 @@ namespace Player.State
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Moving, false); // 다른 상태 애니메이션 비활성화
 
             _player.ChangeViewAndCollider(true); // 슬라이딩 뷰로 변경
+
+            _player.SetCameraFOV(_player.movingFOV); // Sliding 상태의 카메라 FOV 설정
         }
 
         public override void Execute()

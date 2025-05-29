@@ -15,11 +15,7 @@ namespace Player.State
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Sliding, false);
             _player.PlayerAnimatorComponent.SetDirection(Vector2.zero); // 방향 애니메이션 초기화
 
-            // Idle 상태 진입 시, 만약 웅크리기(슬라이드) 버튼이 눌려있지만 이동 입력이 없다면,
-            // 웅크리기 상태를 해제할 수 있습니다. (oldController의 ProcessLanding 및 ProcessSlide 참조)
-            // 또는 "CrouchIdle" 상태를 별도로 만들 수도 있습니다.
-            // 여기서는 CrouchActive 상태를 유지하고, MovingState에서 슬라이드로 전환되도록 합니다.
-            // 만약 Idle에서 바로 웅크린 자세를 취하려면 여기서 CrouchActive를 확인하고 콜라이더 변경 등을 수행해야 합니다.
+            _player.SetCameraFOV(_player.idleFOV); // Idle 상태의 카메라 FOV 설정
         }
 
         public override void Execute()
@@ -74,7 +70,6 @@ namespace Player.State
         public override void Exit()
         {
             // Debug.Log("Exiting Idle State");
-            // 특별히 정리할 내용이 없다면 비워둡니다.
         }
     }
 }

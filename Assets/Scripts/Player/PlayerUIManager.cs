@@ -58,18 +58,6 @@ namespace Player
             AddScore(enemyDeadScore);
         }
 
-        public void SetLowHpWarningVisibility(bool isVisible)
-        {
-            if (isVisible)
-            {
-                StartCoroutine(ImageFadeInCoroutine(lowHpWarningImage, 0.5f));
-            }
-            else
-            {
-                StartCoroutine(ImageFadeOutCoroutine(lowHpWarningImage, 0.5f));
-            }
-        }
-
         public void SetSkillBarCharge(float ratio)
         {
             skillBarImage.color = Color.Lerp(nomalSkillBarColor, chargeSkillBarColor, ratio);
@@ -82,6 +70,28 @@ namespace Player
             isCooldownActive = true;
 
             skillBarImage.color = nomalSkillBarColor;
+        }
+
+        public void PlayerHpChanged(int hp, int beforeHp)
+        {
+            var player = PlayerController.Instance;
+            if (hp <= player.warningHp && beforeHp > player.warningHp)
+            {
+                StopAllCoroutines(); // 이전 코루틴 중지
+                StartCoroutine(ImageFadeInCoroutine(lowHpWarningImage, 0.5f));
+            }
+            else if (hp > player.warningHp && beforeHp <= player.warningHp)
+            {
+                // HP가 경고 이하에서 정상으로 회복되면 이미지 페이드 아웃
+                StopAllCoroutines(); // 이전 코루틴 중지
+                StartCoroutine(ImageFadeOutCoroutine(lowHpWarningImage, 0.5f));
+            }
+            else if (hp >= player.warningHp && beforeHp > hp)
+            {
+                // 체력이 경고 이상에서 감소한 경우
+                StopAllCoroutines(); // 이전 코루틴 중지
+                StartCoroutine(TemporaryImageFadeInHalfCoroutine(lowHpWarningImage, 0.5f));
+            }
         }
 
         IEnumerator ImageFadeOutCoroutine(Image image, float duration)
@@ -116,6 +126,34 @@ namespace Player
             }
 
             image.color = endColor;
+        }
+
+        IEnumerator TemporaryImageFadeInHalfCoroutine(Image image, float duration)
+        {
+            image.gameObject.SetActive(true);
+            Color startColor = image.color;
+            Color endColor = new Color(startColor.r, startColor.g, startColor.b, 0.4f);
+            float elapsedTime = 0f;
+
+            while (elapsedTime < duration)
+            {
+                image.color = Color.Lerp(startColor, endColor, elapsedTime / duration);
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
+
+            image.color = endColor;
+
+            yield return new WaitForSeconds(0.5f);
+            elapsedTime = 0f;
+            while (elapsedTime < duration)
+            {
+                image.color = Color.Lerp(endColor, startColor, elapsedTime / duration);
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
+            image.color = startColor;
+            image.gameObject.SetActive(false); // 이미지 비활성화
         }
     }
 }

@@ -22,6 +22,8 @@ namespace Player.State
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Jumping, true); // Trigger 방식이므로 value는 무관할 수 있음
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Moving, false); // 다른 상태 애니메이션 비활성화
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Sliding, false);
+
+            _player.SetCameraFOV(_player.movingFOV); // Jumping 상태의 카메라 FOV 설정
         }
 
         public override void Execute()

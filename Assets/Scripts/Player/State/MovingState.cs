@@ -16,6 +16,8 @@ namespace Player.State
             // 이동 애니메이션 활성화
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Moving, true);
             _player.JumpRequested = false; // Moving 상태 진입 시 점프 요청 초기화
+
+            _player.SetCameraFOV(_player.movingFOV); // Moving 상태의 카메라 FOV 설정
         }
 
         public override void Execute()
@@ -47,14 +49,11 @@ namespace Player.State
             // 전방에 장애물이 있고, 플레이어가 충분히 가까이 있으며, 점프 입력이 있었을 때
             // 또는 특정 조건 (예: 계속 앞으로 이동 중)에서 자동으로 시도할 수도 있음
             // 여기서는 점프 입력과 함께 전방 장애물 감지 시 시도한다고 가정
-            if (_player.JumpRequested && _player.MoveInput.y > 0.5f) // 점프 입력 + 앞으로 이동 중일 때
+
+            if (TryAttemptVaultOrClimb())
             {
-                if (TryAttemptVaultOrClimb())
-                {
-                    // TryAttemptVaultOrClimb 내부에서 상태 전환이 일어나므로 여기서 return
-                    return;
-                }
-                // 뛰어넘기/기어오르기 실패 시, 일반 점프로 처리될 수 있도록 JumpRequested는 유지
+                // TryAttemptVaultOrClimb 내부에서 상태 전환이 일어나므로 여기서 return
+                return;
             }
 
             // 3. 점프 요청 감지: 점프 버튼이 눌렸고 땅에 있다면 JumpingState로 전환
@@ -133,7 +132,7 @@ namespace Player.State
                 {
                     float obstacleDepth = _player.CalculateObstacleDepth(hitInfo);
 
-                     Debug.Log($"Calculated Obstacle Depth: {obstacleDepth}, Max Vaultable Depth: {_player.maxVaultableDepth}");
+                    Debug.Log($"Calculated Obstacle Depth: {obstacleDepth}, Max Vaultable Depth: {_player.maxVaultableDepth}");
 
                     if (obstacleDepth < _player.maxVaultableDepth) // 일반 뛰어넘기 조건
                     {
