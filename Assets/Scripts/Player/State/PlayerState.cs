@@ -6,7 +6,6 @@ namespace Player.State
     {
         Idle = 0,
         Moving,
-        Jumping,
         Falling,
         Sliding,
         Vaulting,

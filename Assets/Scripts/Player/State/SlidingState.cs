@@ -40,7 +40,7 @@ namespace Player.State
             // 1. 지상 상태 확인: 공중에 뜨면 FallingState로 전환
             if (!_player.CharacterControllerComponent.isGrounded)
             {
-                _player.VerticalVelocity += Physics.gravity.y * Time.deltaTime; // 중력은 계속 누적
+                // _player.VerticalVelocity += Physics.gravity.y * Time.deltaTime; // 중력은 계속 누적
                 _player.TransitionToState(PlayerState.Falling);
                 return;
             }
@@ -60,7 +60,7 @@ namespace Player.State
             bool isObstacleAbove = CheckObstacleOnTop();
             if (_player.JumpRequested && !isObstacleAbove)
             {
-                _player.TransitionToState(PlayerState.Jumping);
+                _player.DoJump();
                 return;
             }
 

@@ -15,7 +15,7 @@ namespace Player.State
             _player.VaultStartTime = Time.time;
             _player.VerticalVelocity = 0; // 뛰어넘기 중에는 중력 및 기존 수직 속도 무시
 
-            _player.PlayerInput.Disable();
+            _player.InputManagerComponent.DisablePlayerActions();
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Vaulting, true); // 뛰어넘기 애니메이션 트리거
         }
 
@@ -56,7 +56,7 @@ namespace Player.State
             _player.IsVaultingInternal = false;
             _player.gameObject.layer = _player.OriginalPlayerLayer;
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Vaulting, false);
-            _player.PlayerInput.Enable(); // 입력 다시 활성화
+            _player.InputManagerComponent.EnablePlayerActions();
             // 필요한 경우 VerticalVelocity 재설정
         }
     }

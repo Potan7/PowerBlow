@@ -1,0 +1,97 @@
+using UnityEngine;
+
+namespace Player.Component
+{
+    public class PlayerStatsManager
+    {
+        private PlayerUIManager _playerUIManager;
+
+        // 스탯 관련 설정값 (PlayerController에서 받아오거나 직접 설정)
+        public int maxHealth = 100;
+        public int warningHp = 30; // UI 표시용
+        public int enemyDamage = 10; // 피격 시 기본 데미지 (외부에서 설정 가능)
+        public float regenerationCooldown = 5f;
+        public int regenerationAmount = 1;
+        public float invincibilityDuration = 0.5f;
+
+        private int currentHealthInternal;
+        public int CurrentHealth
+        {
+            get => currentHealthInternal;
+            private set
+            {
+                int previousHealth = currentHealthInternal;
+                currentHealthInternal = Mathf.Clamp(value, 0, maxHealth);
+
+                if (_playerUIManager != null)
+                    _playerUIManager.PlayerHpChanged(currentHealthInternal, previousHealth); // UI 업데이트
+
+                if (currentHealthInternal <= 0)
+                {
+                    HandleDeath();
+                }
+            }
+        }
+
+        private float currentRegenerationTimer = 0f;
+        private float currentInvincibilityTimer = 0f;
+
+        public PlayerStatsManager(PlayerController pc, PlayerUIManager uiManager)
+        {
+            _playerUIManager = uiManager;
+
+            // PlayerController에서 설정값 가져오기 (예시)
+            maxHealth = pc.maxHealth;
+            warningHp = pc.warningHp;
+            enemyDamage = pc.enemyDamage;
+            regenerationCooldown = pc.regenerationCooldown;
+            regenerationAmount = pc.regenerationAmount;
+            invincibilityDuration = pc.invincibilityDuration;
+
+            CurrentHealth = maxHealth;
+        }
+
+        public void TakeDamage(int damageAmount)
+        {
+            if (currentInvincibilityTimer > 0f || CurrentHealth <= 0) return;
+
+            CurrentHealth -= damageAmount;
+            currentInvincibilityTimer = invincibilityDuration;
+            currentRegenerationTimer = regenerationCooldown; // 피격 시 재생 쿨타임 초기화
+        }
+
+        private void HandleDeath()
+        {
+            // PlayerController를 통해 게임 오버 로직 호출 또는 직접 처리
+            if (_playerUIManager != null)
+                _playerUIManager.EndGame(false); // 예시: UI 매니저에 게임 오버 알림
+            // _playerController?.Die(); // PlayerController에 Die 메서드가 있다면
+        }
+
+        public void UpdateTimers() // PlayerController.Update에서 호출
+        {
+            // 체력 재생 로직
+            if (CurrentHealth < maxHealth && currentRegenerationTimer <= 0f)
+            {
+                CurrentHealth += regenerationAmount; // 초당 재생이 아닌, 타이머 종료 시 1회 재생으로 가정
+                currentRegenerationTimer = 1f; // 매 초 재생을 원한다면 이 부분을 조정하거나, Update에서 Time.deltaTime 누적
+            }
+            else if (currentRegenerationTimer > 0f)
+            {
+                currentRegenerationTimer -= Time.deltaTime;
+            }
+
+            // 무적 시간 로직
+            if (currentInvincibilityTimer > 0f)
+            {
+                currentInvincibilityTimer -= Time.deltaTime;
+            }
+        }
+
+        // 외부에서 체력 변경 시 (예: 아이템 획득)
+        public void ModifyHealth(int amount)
+        {
+            CurrentHealth += amount;
+        }
+    }
+}

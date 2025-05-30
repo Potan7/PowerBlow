@@ -154,8 +154,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2912178795639398257}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.69, z: 0.25699997}
+  m_LocalRotation: {x: 0.000000059604638, y: -0.000000029802322, z: -0.000000021032264, w: 1}
+  m_LocalPosition: {x: -0.000000070780516, y: 1.6900005, z: 0.25700027}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -229,7 +229,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4afa82ae3200b82408d605c3dbdd1e38, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Damping: 0.7
+  Damping: 0
 --- !u!1 &4666483796970975372
 GameObject:
   m_ObjectHideFlags: 0
@@ -336,6 +336,7 @@ GameObject:
   - component: {fileID: 5767138709800490254}
   - component: {fileID: 3509859115194589294}
   - component: {fileID: 8879114790033174999}
+  - component: {fileID: 7897897860833752679}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -377,18 +378,19 @@ MonoBehaviour:
   head: {fileID: 7831839041701269520}
   cameraTransform: {fileID: 5753666644970600295}
   cinemachineCamera: {fileID: 6253708422245156434}
-  idleFOV: 75
-  movingFOV: 85
   speedParticle: {fileID: 0}
-  CurrentSlidingVelocity: {x: 0, y: 0, z: 0}
-  moveSpeed: 10
-  jumpPower: 5
-  slideInitialSpeedMultiplier: 1.5
-  slideDeceleration: 6
-  slidingColliderHeight: 0.5
   mouseSensitivity: 0.3
   pitchMin: -85
   pitchMax: 45
+  idleFOV: 75
+  movingFOV: 85
+  fovChangeSpeed: 10
+  CurrentSlidingVelocity: {x: 0, y: 0, z: 0}
+  moveSpeed: 7
+  jumpPower: 5
+  slideInitialSpeedMultiplier: 1.2
+  slideDeceleration: 3
+  slidingColliderHeight: 0.5
   vaultCheckDistance: 1.2
   canVaultHeightRatio: 0.7
   vaultLayerMask: 6
@@ -412,7 +414,6 @@ MonoBehaviour:
   attackCooldown: 1
   attackMinChargeTime: 0.5
   attackMaxChargeTime: 2.5
-  health: 0
   maxHealth: 100
   warningHp: 30
   enemyDamage: 10
@@ -444,6 +445,18 @@ CharacterController:
   m_SkinWidth: 0.001
   m_MinMoveDistance: 0
   m_Center: {x: 0, y: 0.85, z: 0}
+--- !u!114 &7897897860833752679
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7287296495929200162}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7e3c3b5f96fba74db9b56806a41d8ce, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1293643303923837409
 PrefabInstance:
   m_ObjectHideFlags: 0

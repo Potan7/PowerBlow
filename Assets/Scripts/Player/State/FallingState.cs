@@ -27,8 +27,8 @@ namespace Player.State
         // 매 프레임 호출되는 메서드 (상태의 주요 로직)
         public override void Execute()
         {
-            // 1. 중력 적용: 수직 속도에 중력을 계속 더해줍니다.
-            _player.VerticalVelocity += Physics.gravity.y * Time.deltaTime;
+            // 1. 중력 적용: 제거
+            // _player.VerticalVelocity += Physics.gravity.y * Time.deltaTime; 
 
             // 2. 수평 이동 (공중 제어): 플레이어 입력에 따라 공중에서도 약간의 수평 이동을 허용합니다.
             Vector3 horizontalMovement = Vector3.zero;
@@ -39,7 +39,7 @@ namespace Player.State
             {
                 // 입력 방향을 월드 좌표 기준으로 변환
                 worldMoveDirection = _player.transform.TransformDirection(new Vector3(_player.MoveInput.x, 0, _player.MoveInput.y)).normalized;
-                horizontalMovement = worldMoveDirection * _player.moveSpeed * Time.deltaTime; // 공중 제어 시 속도 계수를 다르게 할 수도 있음
+                horizontalMovement = _player.moveSpeed * Time.deltaTime * worldMoveDirection; // 공중 제어 시 속도 계수를 다르게 할 수도 있음
 
                 // 공중 이동 시 애니메이터 방향 업데이트
                 _player.PlayerAnimatorComponent.SetDirection(_player.MoveInput);
@@ -57,16 +57,15 @@ namespace Player.State
                 _wasMovingLastFrameInAir = isCurrentlyMovingInAir;
             }
             
-            // 3. 최종 이동 적용: 수평 이동과 수직 이동(중력)을 합쳐 CharacterController에 적용
-            Vector3 verticalMovement = Vector3.up * _player.VerticalVelocity * Time.deltaTime;
-            _player.CharacterControllerComponent.Move(horizontalMovement + verticalMovement);
+            // 3. 최종 이동 적용: 제거
+            // Vector3 verticalMovement = Vector3.up * _player.VerticalVelocity * Time.deltaTime;
+            // _player.CharacterControllerComponent.Move(horizontalMovement + verticalMovement);
 
-            // 4. 착지 감지: CharacterController가 땅에 닿았는지 확인
-            if (_player.CharacterControllerComponent.isGrounded)
+            // 4. 착지 감지
+            if (_player.CharacterControllerComponent.isGrounded && _player.VerticalVelocity < 0) // VerticalVelocity 조건 추가 (하강 중 착지)
             {
-                // 땅에 닿았다면 착지 처리 및 상태 전환
                 ProcessLanding();
-                return; // 착지 시 아래 벽타기 로직은 실행 안되도록
+                return;
             }
 
             // 벽 타기 시도 (플레이어가 벽 쪽으로 이동 입력을 할 때)

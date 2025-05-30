@@ -57,6 +57,12 @@ namespace Player
             restartButtonText.text = "Next Stage";
             isClear = true;
 
+            int buildCount = SceneManager.sceneCountInBuildSettings;
+            if (SceneManager.GetActiveScene().buildIndex + 1 >= buildCount)
+            {
+                restartButtonText.text = "End";
+            }
+
             StartCoroutine(ShowAnimCoroutine(1f));
         }
 
@@ -66,6 +72,10 @@ namespace Player
             if (index == 0)
             {
                 int currentSceneIndex = SceneManager.GetActiveScene().buildIndex + (isClear ? 1 : 0);
+                if (currentSceneIndex >= SceneManager.sceneCountInBuildSettings)
+                {
+                    currentSceneIndex--;
+                }
                 sceneLoad = SceneManager.LoadSceneAsync(currentSceneIndex);
             }
             else

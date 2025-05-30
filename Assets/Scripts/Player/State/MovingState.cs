@@ -25,17 +25,8 @@ namespace Player.State
             // 1. 지상 상태 유지 및 중력 처리
             if (!_player.CharacterControllerComponent.isGrounded)
             {
-                _player.VerticalVelocity += Physics.gravity.y * Time.deltaTime;
-                // 공중에 뜨면 즉시 Falling 상태로 전환 (점프가 아닌 경우)
-                if (_player.VerticalVelocity < -0.1f) // 점프 직후가 아닌, 일반적인 낙하 시작 감지
-                {
-                    _player.TransitionToState(PlayerState.Falling);
-                    return;
-                }
-            }
-            else if (_player.VerticalVelocity < 0)
-            {
-                _player.VerticalVelocity = -2f;
+                _player.TransitionToState(PlayerState.Falling);
+                return;
             }
 
             // 2. 이동 입력 중단 감지: 이동 입력이 없고 땅에 있다면 IdleState로 전환
@@ -56,14 +47,6 @@ namespace Player.State
                 return;
             }
 
-            // 3. 점프 요청 감지: 점프 버튼이 눌렸고 땅에 있다면 JumpingState로 전환
-            if (_player.JumpRequested && _player.CharacterControllerComponent.isGrounded)
-            {
-                _player.TransitionToState(PlayerState.Jumping);
-                // JumpRequested는 JumpingState의 Enter에서 false로 설정
-                return;
-            }
-
             // 4. 슬라이드 요청 감지: 웅크리기 버튼이 활성화되어 있고, 땅에 있으며, 이동 입력이 있다면 SlidingState로 전환
             if (_player.CrouchActive && _player.CharacterControllerComponent.isGrounded && _player.MoveInput != Vector2.zero)
             {
@@ -72,30 +55,14 @@ namespace Player.State
             }
 
             // 일반 이동 로직
-            Vector3 moveDirection = _player.transform.TransformDirection(new Vector3(_player.MoveInput.x, 0, _player.MoveInput.y)).normalized;
-            Vector3 horizontalMovement = _player.moveSpeed * Time.deltaTime * moveDirection;
+            // Vector3 moveDirection = _player.transform.TransformDirection(new Vector3(_player.MoveInput.x, 0, _player.MoveInput.y)).normalized;
+            // Vector3 horizontalMovement = _player.moveSpeed * Time.deltaTime * moveDirection;
 
-            // 중력 적용
-            if (!_player.CharacterControllerComponent.isGrounded)
-            {
-                _player.VerticalVelocity += Physics.gravity.y * Time.deltaTime;
-            }
-            else if (_player.VerticalVelocity < 0)
-            {
-                _player.VerticalVelocity = -2f; // 안정적인 착지를 위해
-            }
-
-            Vector3 verticalMovement = _player.VerticalVelocity * Time.deltaTime * Vector3.up;
-            _player.CharacterControllerComponent.Move(horizontalMovement + verticalMovement);
+            // Vector3 verticalMovement = _player.VerticalVelocity * Time.deltaTime * Vector3.up;
+            // _player.CharacterControllerComponent.Move(horizontalMovement + verticalMovement);
 
 
-            // 상태 전환 로직 (기존과 유사하게)
-            if (_player.JumpRequested && _player.CharacterControllerComponent.isGrounded)
-            {
-                _player.TransitionToState(PlayerState.Jumping);
-                return;
-            }
-
+            // 상태 전환 로직
             if (!_player.CharacterControllerComponent.isGrounded && _player.VerticalVelocity < -0.1f) // 떨어지기 시작하면
             {
                 _player.TransitionToState(PlayerState.Falling);
