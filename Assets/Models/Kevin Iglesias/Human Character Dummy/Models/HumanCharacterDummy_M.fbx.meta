@@ -1,5 +1,12 @@
 fileFormatVersion: 2
 guid: d9cd8eb4a074cd84ab2686c58bcf21d9
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178395
+  packageName: Human Character Dummy
+  packageVersion: 2.0
+  assetPath: Assets/Kevin Iglesias/Human Character Dummy/Models/HumanCharacterDummy_M.fbx
+  uploadId: 754599
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
@@ -16,14 +23,6 @@ ModelImporter:
     optimizeGameObjects: 0
     removeConstantScaleCurves: 0
     motionNodeName: 
-    rigImportErrors: 
-    rigImportWarnings: "Avatar Rig Configuration mis-match. Bone length in configuration
-      does not match position in animation file:\n\t'B-thigh.L' : position error
-      = 9639.943359 mm\n\t'B-shin.L' : position error = 38723.230469 mm\n\t'B-foot.L'
-      : position error = 36454.289062 mm\n\t'B-toe.L' : position error = 16668.341797
-      mm\n\t'B-thigh.R' : position error = 9639.993164 mm\n\t'B-shin.R' : position
-      error = 38723.144531 mm\n\t'B-foot.R' : position error = 36454.242188 mm\n\t'B-toe.R'
-      : position error = 16668.664062 mm\n"
     animationImportErrors: 
     animationImportWarnings: 
     animationRetargetingWarnings: 
@@ -42,7 +41,7 @@ ModelImporter:
   meshes:
     lODScreenPercentages: []
     globalScale: 1
-    meshCompression: 0
+    meshCompression: 2
     addColliders: 0
     useSRGBMaterialColor: 1
     sortHierarchyByName: 1
@@ -819,10 +818,3 @@ ModelImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 178395
-  packageName: Human Character Dummy
-  packageVersion: 2.0
-  assetPath: Assets/Kevin Iglesias/Human Character Dummy/Models/HumanCharacterDummy_M.fbx
-  uploadId: 754599

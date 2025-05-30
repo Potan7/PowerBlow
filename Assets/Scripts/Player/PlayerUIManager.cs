@@ -30,7 +30,7 @@ namespace Player
         public int timer = 0;
 
         public int enemyDeadScore = 100; // 적 처치 시 점수
-        public int maxScoreTime = 30000; // 최대 점수 시간 (30초)
+        public int maxScoreTime = 300000; // 최대 점수
 
         [SerializeField]
         PlayerResultPanel playerResultPanel;
@@ -63,7 +63,7 @@ namespace Player
 
             if (isClear)
             {
-                int add = maxScoreTime - (timer / 1000);
+                int add = maxScoreTime / (timer / 1000);
                 score += add > 0 ? add : 0; // 남은 시간에 따라 점수 추가
                 playerResultPanel.ShowGameClearPanel(timer, score);
             }

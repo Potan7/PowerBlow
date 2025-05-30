@@ -407,11 +407,11 @@ MonoBehaviour:
   minWallClimbHeight: 0.3
   maxWallClimbHeight: 2
   wallClimbLedgeOffset: 0.5
-  attackRange: 3
-  attackPower: 80
+  attackRange: 4
+  attackPower: 90
   attackCooldown: 1
   attackMinChargeTime: 0.5
-  attackMaxChargeTime: 2
+  attackMaxChargeTime: 2.5
   health: 0
   maxHealth: 100
   warningHp: 30

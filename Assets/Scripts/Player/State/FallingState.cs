@@ -114,6 +114,14 @@ namespace Player.State
 
                 if (Physics.Raycast(ledgeCheckOrigin, Vector3.down, out RaycastHit ledgeHit, ledgeRayLength, _player.vaultableLayers))
                 {
+                    // 추가: 감지된 턱(ledgeHit)이 처음 충돌한 벽면(wallHit)보다 너무 높지 않은지 확인
+                    // 예를 들어, maxWallClimbHeight 이상으로 차이나면 잘못된 감지일 수 있음
+                    if (ledgeHit.point.y > wallHit.point.y + _player.maxWallClimbHeight + 0.2f) // 0.2f는 약간의 오차 허용
+                    {
+                        // Debug.Log("WallClimb Fail: Detected ledge is too high compared to initial wall hit point.");
+                        return false;
+                    }
+
                     // 발밑에서부터 턱까지의 실제 높이 계산
                     float playerFeetY = _player.transform.position.y - _player.CharacterControllerComponent.height / 2f + _player.CharacterControllerComponent.skinWidth;
                     float wallActualHeight = ledgeHit.point.y - playerFeetY;

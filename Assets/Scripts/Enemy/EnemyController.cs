@@ -30,6 +30,7 @@ public class EnemyController : MonoBehaviour
     public float moveSpeed = 5f;
     public float playerFindDistance = 10f;
     public float playerAttackDistance = 2f;
+    public float removeDistance = 100f;
 
     public Collider[] attackColliders;
 
@@ -42,7 +43,13 @@ public class EnemyController : MonoBehaviour
     int animatorIsAttackingHash = Animator.StringToHash("isAttacking");
 
 
-    void Start()
+    void Awake()
+    {
+        if (_characterController == null)
+            Init();
+    }
+
+    public void Init()
     {
         _animator = GetComponent<Animator>();
         _characterController = GetComponent<CharacterController>();
@@ -50,6 +57,14 @@ public class EnemyController : MonoBehaviour
 
         ragdollColliders = GetComponentsInChildren<Collider>();
         ragdollRigidbodies = GetComponentsInChildren<Rigidbody>();
+        Disable();
+    }
+
+    public void Disable()
+    {
+        _animator.enabled = false;
+        _navMeshAgent.enabled = false;
+        _characterController.enabled = false;
 
         foreach (var collider in ragdollColliders)
         {
@@ -60,15 +75,34 @@ public class EnemyController : MonoBehaviour
             rb.isKinematic = true;
         }
 
+        currentState = EnemyState.Idle;
+    }
+
+    public void Active()
+    {
+
+        foreach (var collider in ragdollColliders)
+        {
+            collider.enabled = false;
+        }
+        foreach (var rb in ragdollRigidbodies)
+        {
+            rb.isKinematic = true;
+        }
+
+        _animator.enabled = true;
+        _navMeshAgent.enabled = true;
         _characterController.enabled = true;
+        currentState = EnemyState.Idle;
     }
 
     void Update()
     {
-        if (transform.position.y < -10f)
+        if (transform.position.y < -5f)
         {
             PlayerController.Instance.EnemyIsDead();
-            Destroy(gameObject);
+            EnemyManager.Instance.EnemyDied(this);
+            // Destroy(gameObject);
             return;
         }
 
@@ -98,6 +132,12 @@ public class EnemyController : MonoBehaviour
                 _animator.SetBool(animatorIsAttackingHash, false);
                 currentState = EnemyState.Moving;
                 _navMeshAgent.SetDestination(playerPos);
+            }
+            else if (distance > removeDistance)
+            {
+                // 플레이어가 너무 멀리 있으면 적 제거
+                EnemyManager.Instance.EnemyDied(this);
+                // Destroy(gameObject);
             }
             else
             {

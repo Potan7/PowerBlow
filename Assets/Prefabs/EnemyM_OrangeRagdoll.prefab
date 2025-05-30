@@ -1305,6 +1305,7 @@ MonoBehaviour:
   moveSpeed: 5
   playerFindDistance: 20
   playerAttackDistance: 1.7
+  removeDistance: 100
   attackColliders:
   - {fileID: 1574160333729378859}
   - {fileID: 5778896212183856865}

@@ -28,6 +28,7 @@ public class StageClearPoint : MonoBehaviour
             Debug.Log("Stage Clear!");
 
             FindFirstObjectByType<PlayerUIManager>().EndGame(true);
+            EnemyManager.Instance.ClearEnemies();
         }
     }
 }

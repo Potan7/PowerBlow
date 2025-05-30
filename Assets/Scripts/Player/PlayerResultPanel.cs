@@ -28,6 +28,7 @@ namespace Player
             resultPanel.SetActive(false);
             titleText.gameObject.SetActive(false);
             scoreText.gameObject.SetActive(false);
+            timeText.gameObject.SetActive(false);
 
             for (int i = 0; i < buttons.Length; i++)
             {

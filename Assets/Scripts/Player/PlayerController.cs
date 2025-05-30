@@ -195,7 +195,15 @@ namespace Player
 
             if (CharacterControllerComponent.isGrounded)
             {
-                _lastGroundedPosition = transform.position; // 마지막 착지 위치 업데이트
+                // 플레이어가 땅에 닿았을 때, 밟고 있는 지면의 레이어를 확인
+                if (Physics.Raycast(transform.position + CharacterControllerComponent.center, Vector3.down, out RaycastHit hitInfo, CharacterControllerComponent.height / 2f + CharacterControllerComponent.skinWidth + 0.1f))
+                {
+                    // vaultableLayers에 해당 레이어가 포함되어 있는지 확인 (비트마스크 연산)
+                    if ((vaultableLayers.value & (1 << hitInfo.collider.gameObject.layer)) > 0)
+                    {
+                        _lastGroundedPosition = transform.position; // 마지막 착지 위치 업데이트
+                    }
+                }
             }
 
             if (transform.position.y < -10f)
@@ -259,7 +267,7 @@ namespace Player
 
         void OnDisable()
         {
-            PlayerInput.Disable();
+            // PlayerInput.Disable();
 
             PlayerInput.Player.Move.performed -= OnMoveInput;
             PlayerInput.Player.Move.canceled -= OnMoveInput;
@@ -268,7 +276,6 @@ namespace Player
             PlayerInput.Player.Crouch.performed -= OnCrouchInput;
             PlayerInput.Player.Attack.performed -= OnAttackInput;
             PlayerInput.Player.Attack.canceled -= OnAttackInput;
-            PlayerInput.Player.Menu.performed -= OnMenuInput;
 
             // 마우스 설정 초기화
             Cursor.lockState = CursorLockMode.None;
@@ -278,6 +285,8 @@ namespace Player
 
         public void OnDestroy()
         {
+            PlayerInput.Disable();
+            PlayerInput.Player.Menu.performed -= OnMenuInput;
             PlayerInput.Dispose();
             PlayerInput = null;
             if (Instance == this)
@@ -303,7 +312,7 @@ namespace Player
             if (callback.performed)
             {
                 // 메뉴 버튼이 눌렸을 때
-                MenuManager.SetMenuActive(true);   
+                MenuManager.SetMenuActive(!MenuManager.Instance.IsMenuActive);   
             }
         }
         void OnMoveInput(InputAction.CallbackContext callback)
