@@ -19,7 +19,6 @@ namespace Player
                 // 적과 충돌 시 처리 로직
                 Debug.Log("Hit by enemy attack!");
                 player.Health -= player.enemyDamage;
-                player.regenerationTimer = player.regenerationCooldown;
 
                 // 적의 반대방향으로 내가 튕겨나가기
                 Vector3 knockbackDirection = (transform.position - other.transform.position).normalized;

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -17,7 +18,7 @@ namespace Player
         // 초 : 밀리초 형식으로 타이머 표시
         const string timerFormat = "{0:D2}:{1:D3}";
 
-        Color nomalSkillBarColor = Color.white;
+        Color normalSkillBarColor = Color.white;
         Color chargeSkillBarColor = Color.blue;
 
         float cooldownStartTime;
@@ -29,6 +30,15 @@ namespace Player
         public int timer = 0;
 
         public int enemyDeadScore = 100; // 적 처치 시 점수
+        public int maxScoreTime = 30000; // 최대 점수 시간 (30초)
+
+        [SerializeField]
+        PlayerResultPanel playerResultPanel;
+
+        void Start()
+        {
+            playerResultPanel = GetComponent<PlayerResultPanel>();
+        }
 
         void Update()
         {
@@ -47,6 +57,23 @@ namespace Player
             timerText.text = string.Format(timerFormat, timer / 1000, timer % 1000);
         }
 
+        public void EndGame(bool isClear)
+        {
+            PlayerController.Instance.gameObject.SetActive(false);
+
+            if (isClear)
+            {
+                int add = maxScoreTime - (timer / 1000);
+                score += add > 0 ? add : 0; // 남은 시간에 따라 점수 추가
+                playerResultPanel.ShowGameClearPanel(timer, score);
+            }
+            else
+            {
+                playerResultPanel.ShowGameOverPanel(timer, score);
+            }
+            
+        }
+
         public void AddScore(int amount)
         {
             score += amount;
@@ -60,7 +87,7 @@ namespace Player
 
         public void SetSkillBarCharge(float ratio)
         {
-            skillBarImage.color = Color.Lerp(nomalSkillBarColor, chargeSkillBarColor, ratio);
+            skillBarImage.color = Color.Lerp(normalSkillBarColor, chargeSkillBarColor, ratio);
         }
 
         public void SetSkillBarCooldown(float time)
@@ -69,7 +96,7 @@ namespace Player
             cooldownCurrentTime = time;
             isCooldownActive = true;
 
-            skillBarImage.color = nomalSkillBarColor;
+            skillBarImage.color = normalSkillBarColor;
         }
 
         public void PlayerHpChanged(int hp, int beforeHp)
@@ -93,6 +120,8 @@ namespace Player
                 StartCoroutine(TemporaryImageFadeInHalfCoroutine(lowHpWarningImage, 0.5f));
             }
         }
+
+        #region AnimCoroutines
 
         IEnumerator ImageFadeOutCoroutine(Image image, float duration)
         {
@@ -155,5 +184,6 @@ namespace Player
             image.color = startColor;
             image.gameObject.SetActive(false); // 이미지 비활성화
         }
+        #endregion
     }
 }

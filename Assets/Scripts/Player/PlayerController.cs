@@ -134,8 +134,9 @@ namespace Player
                 if (value < health)
                 {
                     if (invincibilityTimer > 0f) return;
-                    // 체력이 감소할 때 무적 시간 초기화
+                    // 체력이 감소할 때 무적 시간 초기화 및 재생 대기 시간 초기화
                     invincibilityTimer = invincibilityDuration;
+                    regenerationTimer = regenerationCooldown;
                 }
 
                 PlayerUIComponent.PlayerHpChanged(value, health);
@@ -143,8 +144,7 @@ namespace Player
 
                 if (health <= 0)
                 {
-                    // 플레이어 사망 처리
-                    Debug.Log("Player has died.");
+                    PlayerUIComponent.EndGame(false); // 게임 오버 처리
                 }
             }
         }
@@ -180,14 +180,10 @@ namespace Player
             StandingColliderHeight = CharacterControllerComponent.height;
             StandingColliderCenterY = CharacterControllerComponent.center.y;
 
-            
-            // 마우스 설정
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
-
             // 초기 상태 설정
             TransitionToState(PlayerState.Idle);
 
+            PlayerInput.Disable();
             FadeSystem.StartFadeOut(1.5f, () => PlayerInput.Enable());
         }
 
@@ -253,7 +249,12 @@ namespace Player
             PlayerInput.Player.Crouch.performed += OnCrouchInput;
             PlayerInput.Player.Attack.performed += OnAttackInput;
             PlayerInput.Player.Attack.canceled += OnAttackInput;
+            PlayerInput.Player.Menu.performed += OnMenuInput;
             PlayerInput.Enable(); // 입력 활성화
+
+            // 마우스 설정
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
         }
 
         void OnDisable()
@@ -267,6 +268,11 @@ namespace Player
             PlayerInput.Player.Crouch.performed -= OnCrouchInput;
             PlayerInput.Player.Attack.performed -= OnAttackInput;
             PlayerInput.Player.Attack.canceled -= OnAttackInput;
+            PlayerInput.Player.Menu.performed -= OnMenuInput;
+
+            // 마우스 설정 초기화
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
         }
 
 
@@ -292,6 +298,14 @@ namespace Player
         #endregion
 
         #region Input Callbacks
+        void OnMenuInput(InputAction.CallbackContext callback)
+        {
+            if (callback.performed)
+            {
+                // 메뉴 버튼이 눌렸을 때
+                MenuManager.SetMenuActive(true);   
+            }
+        }
         void OnMoveInput(InputAction.CallbackContext callback)
         {
             MoveInput = callback.ReadValue<Vector2>();

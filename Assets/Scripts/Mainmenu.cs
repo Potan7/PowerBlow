@@ -10,13 +10,13 @@ public class Mainmenu : MonoBehaviour
 
     void Start()
     {
-        FadeSystem.StartFadeIn(1f);
+        FadeSystem.StartFadeOut(1f);
 
         for (int i = 0; i < soundSliders.Length; i++)
         {
             // 슬라이더의 값이 변경될 때마다 오디오 믹서의 볼륨을 업데이트
             int index = i;
-            soundSliders[i].onValueChanged.AddListener(value => 
+            soundSliders[i].onValueChanged.AddListener(value =>
             {
                 AudioManager.SetAudioVolume((AudioManager.AudioType)index, value);
             });
@@ -24,11 +24,14 @@ public class Mainmenu : MonoBehaviour
         }
     }
 
-    public void StartGame()
+    public void StartGame(int stageIndex)
     {
-        FadeSystem.StartFadeIn(1f, () => 
+        var sceneLoad = SceneManager.LoadSceneAsync(stageIndex);
+        sceneLoad.allowSceneActivation = false;
+        FadeSystem.StartFadeIn(1f, () =>
         {
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+            sceneLoad.allowSceneActivation = true;
         });
     }
+
 }
