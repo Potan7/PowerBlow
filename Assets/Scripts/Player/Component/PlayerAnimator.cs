@@ -12,6 +12,8 @@ namespace Player.Component
         public float attackOrbSize = 4f;
         public float attackOrbTime = 0.4f;
 
+        public AudioSource footstepAudioSource;
+
         private void Awake()
         {
             animator = GetComponent<Animator>();
@@ -85,7 +87,6 @@ namespace Player.Component
 
         void OnFootstep(AnimationEvent animationEvent)
         {
-
         }
 
         IEnumerator AttackAnimCoroutine()

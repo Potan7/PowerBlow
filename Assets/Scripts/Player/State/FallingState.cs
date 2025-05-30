@@ -106,7 +106,7 @@ namespace Player.State
                 // 레이캐스트 길이: 최대 높이에서 최소 높이까지의 범위 + 여유
                 // startY가 wallHit.point.y + maxWallClimbHeight 이므로, 여기서 minWallClimbHeight까지 내려오려면
                 // (maxWallClimbHeight - minWallClimbHeight) + (턱의 두께나 감지 여유) 만큼의 길이가 필요
-                float ledgeRayLength = (_player.maxWallClimbHeight - _player.minWallClimbHeight) + 0.3f;
+                float ledgeRayLength = _player.maxWallClimbHeight - _player.minWallClimbHeight + 0.3f;
                 if (ledgeRayLength <= 0.1f) ledgeRayLength = _player.maxWallClimbHeight + 0.1f; 
 
                 Debug.DrawRay(ledgeCheckOrigin, Vector3.down * ledgeRayLength, Color.yellow, 0.2f); 
@@ -166,7 +166,7 @@ namespace Player.State
         // 착지 처리 로직 (oldController의 ProcessLanding 참조)
         private void ProcessLanding()
         {
-            // 착지 시 수직 속도를 약간 아래로 설정하여 안정적으로 땅에 붙도록 합니다.
+            // 착지 시 수직 속도를 약간 아래로 설정하여 안정적으로 땅에 붙도록
             _player.VerticalVelocity = -2f;
 
             // 착지 시 웅크리기(슬라이드) 버튼이 눌려있고 이동 입력이 있다면 슬라이딩 상태로 전환

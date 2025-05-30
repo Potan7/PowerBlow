@@ -46,7 +46,7 @@ namespace Player
         public Transform cameraTransform; // 카메라 컨트롤러가 사용할 카메라 리그 트랜스폼
         public CinemachineCamera cinemachineCamera; // 시네머신 카메라
         public GameObject speedParticle; // 속도 파티클
-        public float mouseSensitivity = 2.0f;
+        // public float mouseSensitivity = 2.0f;
         public float pitchMin = -85f;
         public float pitchMax = 85f;
         public float idleFOV = 75f;
@@ -57,6 +57,9 @@ namespace Player
         [Header("Movement")]
         public Vector3 CurrentSlidingVelocity;
         public float moveSpeed = 5f;
+        public float acceleration = 10f; // 초당 증가할 속도
+        public float deceleration = 15f; // 초당 감소할 속도
+        private float currentHorizontalSpeed = 0f; // 현재 수평 속도
         public float jumpPower = 5.0f;
         public float slideInitialSpeedMultiplier = 1.5f;
         public float slideDeceleration = 2.0f;
@@ -103,9 +106,7 @@ namespace Player
         public float attackCooldown = 1f;
         public float attackMinChargeTime = 0.5f;
         public float attackMaxChargeTime = 2f;
-        // private float attackChargeTime = 0f; // AttackController가 관리
-        // private bool isAttackCharging = false; // AttackController가 관리
-        // private readonly Collider[] _attackOverlapResults = new Collider[30]; // AttackController가 관리
+        public float attackJumpPower = 5f; // 공격 시 위로 튕겨오르는 힘
 
         // 스탯 파라미터 (PlayerStatsManager로 이전될 값들)
         [Header("Stat Settings (for StatsManager)")]
@@ -115,9 +116,6 @@ namespace Player
         public float regenerationCooldown = 5f;
         public int regenerationAmount = 1;
         public float invincibilityDuration = 0.5f;
-        // [SerializeField] private int health; // StatsManager가 관리
-        // internal float regenerationTimer = 0f; // StatsManager가 관리
-        // private float invincibilityTimer = 0f; // StatsManager가 관리
         #endregion
 
         #region  Unity Methods
@@ -161,10 +159,10 @@ namespace Player
 
             // 입력 이벤트 구독
             InputManagerComponent.MoveEvent += OnMoveInputReceived;
-            InputManagerComponent.LookEvent += CameraControllerComponent.HandleLookInput; // 직접 연결
+            InputManagerComponent.LookEvent += CameraControllerComponent.HandleLookInput;
             InputManagerComponent.JumpEvent += OnJumpInputReceived;
             InputManagerComponent.CrouchEvent += OnCrouchInputReceived;
-            InputManagerComponent.AttackEvent += AttackControllerComponent.HandleAttackInput; // 직접 연결
+            InputManagerComponent.AttackEvent += AttackControllerComponent.HandleAttackInput;
             InputManagerComponent.MenuEvent += OnMenuInputReceived;
 
             InputManagerComponent.DisablePlayerActions(); // 초기 입력 비활성화
@@ -177,14 +175,40 @@ namespace Player
 
             // --- 이동 처리 로직 ---
             Vector3 horizontalMovement = Vector3.zero;
+            float targetSpeed = 0f;
+
             if (CurrentStateType == PlayerState.Moving || CurrentStateType == PlayerState.Idle || CurrentStateType == PlayerState.Falling)
             {
                 if (MoveInput != Vector2.zero)
                 {
+                    targetSpeed = moveSpeed; // 입력이 있으면 목표 속도는 moveSpeed
                     Vector3 worldMoveDirection = transform.TransformDirection(new Vector3(MoveInput.x, 0, MoveInput.y)).normalized;
-                    horizontalMovement = worldMoveDirection * moveSpeed;
+
+                    // 현재 속도를 목표 속도로 점진적 증가
+                    if (currentHorizontalSpeed < 0.1f)
+                    {
+                        // 최초 입력시 초기 속도 설정
+                        currentHorizontalSpeed = moveSpeed / 2f; // 초기 속도를 절반으로 설정하여 부드러운 시작
+                    }
+                    currentHorizontalSpeed = Mathf.MoveTowards(currentHorizontalSpeed, targetSpeed, acceleration * Time.deltaTime);
+                    horizontalMovement = worldMoveDirection * currentHorizontalSpeed;
+                }
+                else
+                {
+                    targetSpeed = 0f; // 입력이 없으면 목표 속도는 0
+                    // 현재 속도를 목표 속도로 점진적 감소
+                    currentHorizontalSpeed = Mathf.MoveTowards(currentHorizontalSpeed, targetSpeed, deceleration * Time.deltaTime);
+                    if (currentHorizontalSpeed < 0.01f) // 아주 작은 속도일 때는 멈춘 것으로 간주
+                    {
+                        currentHorizontalSpeed = 0f; // 완전히 멈춤
+                    }
                 }
             }
+            else // 다른 상태(슬라이딩, 볼팅 등)에서는 currentHorizontalSpeed를 리셋하거나 해당 상태의 속도 로직을 따름
+            {
+                currentHorizontalSpeed = 0f;
+            }
+
 
             if (CharacterControllerComponent.isGrounded)
             {
@@ -200,10 +224,14 @@ namespace Player
             else
             {
                 VerticalVelocity += Physics.gravity.y * Time.deltaTime;
+                // 공중에 있을 때는 수평 이동에 대한 공중 제어 로직을 추가할 수 있습니다.
+                // 예를 들어, 공중에서는 가속/감속을 다르게 적용하거나 최대 속도를 제한할 수 있습니다.
+                // 현재는 지상과 동일한 로직으로 currentHorizontalSpeed가 적용됩니다.
             }
 
             if (CurrentStateType != PlayerState.Sliding && CurrentStateType != PlayerState.Vaulting && CurrentStateType != PlayerState.ClimbingUp)
             {
+                // horizontalMovement는 이미 currentHorizontalSpeed를 반영하여 계산되었습니다.
                 CharacterControllerComponent.Move((horizontalMovement + Vector3.up * VerticalVelocity) * Time.deltaTime);
             }
             else if (CurrentStateType == PlayerState.Sliding) // 슬라이딩은 자체 속도 사용

@@ -16,6 +16,8 @@ namespace Player.Component
         public float attackMinChargeTime = 0.5f;
         public float attackMaxChargeTime = 2f;
 
+        public float attackJumpPower = 5f; // 공격 시 위로 튕겨오르는 힘
+
         private float currentAttackChargeTime = 0f;
         private bool isAttackChargingInternal = false;
         private readonly Collider[] attackOverlapResults = new Collider[30];
@@ -32,6 +34,7 @@ namespace Player.Component
             attackCooldown = pc.attackCooldown;
             attackMinChargeTime = pc.attackMinChargeTime;
             attackMaxChargeTime = pc.attackMaxChargeTime;
+            attackJumpPower = pc.attackJumpPower;
         }
 
         public void HandleAttackInput(InputAction.CallbackContext context)
@@ -58,8 +61,8 @@ namespace Player.Component
                     // 공격 위치는 CharacterController의 현재 위치를 기준으로
                     Vector3 attackCenter = _characterController.transform.position + Vector3.up * (_characterController.height * 0.5f);
                     float currentChargeRatio = currentAttackChargeTime / attackMaxChargeTime; // 0~1 사이 값
-                    float currentAttackRange = attackRange * (1 + currentChargeRatio * 0.5f); // 차지 시간에 따라 범위 약간 증가 (예시)
-                    float currentAttackPower = attackPower * (1 + currentChargeRatio); // 차지 시간에 따라 파워 증가 (예시)
+                    float currentAttackRange = attackRange * (1 + currentChargeRatio * 0.5f); // 차지 시간에 따라 범위 약간 증가
+                    float currentAttackPower = attackPower * (1 + currentChargeRatio); // 차지 시간에 따라 파워 증가
 
 
                     var hitCount = Physics.OverlapSphereNonAlloc(attackCenter, currentAttackRange, attackOverlapResults, LayerMask.GetMask("Enemy"));
@@ -74,10 +77,16 @@ namespace Player.Component
                             enemyController.Impact(currentAttackPower * direction); // 힘의 크기는 차지 시간에 비례
                         }
                     }
+
+                    // 공격 후 위로 튕겨오름
+                    PlayerController.Instance.VerticalVelocity += attackJumpPower * (1 + currentChargeRatio);
                 }
+
                 _playerUIManager.SetSkillBarCooldown(attackCooldown);
                 currentAttackChargeTime = 0f;
                 _playerUIManager.SetSkillBarCharge(0);
+
+                // 공격 후엔 위로 잠깐 상승함
             }
         }
 

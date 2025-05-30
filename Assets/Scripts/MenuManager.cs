@@ -13,8 +13,12 @@ public class MenuManager : MonoBehaviour
 
     public Button[] menuButtons;
     public Slider[] soundSliders;
+    public Slider sensitivitySlider;
 
     public bool IsMenuActive => mainMenu.activeSelf;
+    public float mouseSensitivity = 0.3f;
+    public float mousePivotMin = 0.05f;
+    public float mousePivotMax = 0.5f;
 
     void Awake()
     {
@@ -33,6 +37,11 @@ public class MenuManager : MonoBehaviour
     void Start()
     {
         mainMenu.SetActive(false);
+        sensitivitySlider.minValue = mousePivotMin;
+        sensitivitySlider.maxValue = mousePivotMax;
+        sensitivitySlider.onValueChanged.AddListener(OnMouseSensitivityChanged);
+        
+        sensitivitySlider.value = mouseSensitivity;
 
         for (int i = 0; i < menuButtons.Length; i++)
         {
@@ -100,5 +109,8 @@ public class MenuManager : MonoBehaviour
         }
     }
 
-
+    public void OnMouseSensitivityChanged(float value)
+    {
+        mouseSensitivity = Mathf.Clamp(value, mousePivotMin, mousePivotMax);
+    }
 }
