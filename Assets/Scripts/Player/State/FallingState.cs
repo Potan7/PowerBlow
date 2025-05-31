@@ -35,20 +35,15 @@ namespace Player.State
             Vector3 worldMoveDirection = Vector3.zero;
             bool isCurrentlyMovingInAir = _player.MoveInput != Vector2.zero;
 
-            if (isCurrentlyMovingInAir)
-            {
-                // 입력 방향을 월드 좌표 기준으로 변환
-                worldMoveDirection = _player.transform.TransformDirection(new Vector3(_player.MoveInput.x, 0, _player.MoveInput.y)).normalized;
-                horizontalMovement = _player.moveSpeed * Time.deltaTime * worldMoveDirection; // 공중 제어 시 속도 계수를 다르게 할 수도 있음
+            // if (isCurrentlyMovingInAir)
+            // {
+            //     // 입력 방향을 월드 좌표 기준으로 변환
+            //     worldMoveDirection = _player.transform.TransformDirection(new Vector3(_player.MoveInput.x, 0, _player.MoveInput.y)).normalized;
+            //     horizontalMovement = _player.moveSpeed * Time.deltaTime * worldMoveDirection;
+            // }
 
-                // 공중 이동 시 애니메이터 방향 업데이트
-                _player.PlayerAnimatorComponent.SetDirection(_player.MoveInput);
-            }
-            else
-            {
-                // 이동 입력이 없을 때 애니메이터 방향 초기화 (선택적)
-                _player.PlayerAnimatorComponent.SetDirection(Vector2.zero);
-            }
+            // 플레이어의 카메라가 바라보는 방향을 구함
+            Vector3 cameraForward = _player.head.transform.forward;
 
             // 공중에서 이동 입력 상태가 변경되면 FOV 업데이트
             if (isCurrentlyMovingInAir != _wasMovingLastFrameInAir)
@@ -69,7 +64,7 @@ namespace Player.State
             }
 
             // 벽 타기 시도 (플레이어가 벽 쪽으로 이동 입력을 할 때)
-            if (worldMoveDirection != Vector3.zero && TryWallClimb(worldMoveDirection))
+            if (TryWallClimb(cameraForward))
             {
                 return; // 벽 타기 성공 시 ClimbingUpState로 전환됨
             }
@@ -84,6 +79,7 @@ namespace Player.State
 
             if (Physics.Raycast(rayOrigin, moveDirection, out RaycastHit wallHit, _player.wallClimbCheckDistance, _player.vaultableLayers))
             {
+
                 // 2. 벽의 법선 확인 (너무 바닥이나 천장이 아니어야 함)
                 if (Mathf.Abs(wallHit.normal.y) > 0.3f) return false;
 
@@ -140,8 +136,10 @@ namespace Player.State
                             _player.VaultStartPosition = _player.transform.position;
                             // VaultUpPosition: 벽의 턱 부분, 플레이어가 손을 짚을 위치
                             _player.VaultUpPosition = new Vector3(ledgeHit.point.x, ledgeHit.point.y, ledgeHit.point.z) - (moveDirection * (_player.CharacterControllerComponent.radius * 0.1f)); // 턱에 살짝 걸치도록
-                            // VaultEndPosition: 벽 위에 안전하게 착지할 위치
-                            _player.VaultEndPosition = new Vector3(ledgeHit.point.x, ledgeHit.point.y, ledgeHit.point.z) + (moveDirection * _player.wallClimbLedgeOffset);
+                            
+                            // 플레이어가 턱 바로 위에 안정적으로 서는 데 필요한 오프셋 사용
+                            float climbUpSpecificForwardOffset = _player.CharacterControllerComponent.radius + 0.1f; // 플레이어 반지름 + 약간의 여유로 턱 바로 위에 위치하도록 설정
+                            _player.VaultEndPosition = new Vector3(ledgeHit.point.x, ledgeHit.point.y, ledgeHit.point.z) + (moveDirection * climbUpSpecificForwardOffset);
 
                             _player.TransitionToState(PlayerState.ClimbingUp);
                             return true;
@@ -185,6 +183,8 @@ namespace Player.State
                 {
                     _player.TransitionToState(PlayerState.Idle);
                 }
+
+                _player.PlayerAudioComponent.PlaySound(PlayerAudioManager.PlayerAudioType.Land);
             }
         }
     }

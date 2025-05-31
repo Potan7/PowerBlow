@@ -26,6 +26,8 @@ namespace Player.State
             _climbStartPosition = _player.transform.position;
             _climbOverPosition = _player.VaultUpPosition;
             _climbEndPosition = _player.VaultEndPosition;
+
+            _player.PlayerAudioComponent.PlaySound(PlayerAudioManager.PlayerAudioType.Vaulting); // 뛰어넘기 사운드 재생
         }
 
         public override void Execute()

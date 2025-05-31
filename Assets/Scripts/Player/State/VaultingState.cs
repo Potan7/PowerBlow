@@ -17,6 +17,8 @@ namespace Player.State
 
             _player.InputManagerComponent.DisablePlayerActions();
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Vaulting, true); // 뛰어넘기 애니메이션 트리거
+
+            _player.PlayerAudioComponent.PlaySound(PlayerAudioManager.PlayerAudioType.Vaulting); // 뛰어넘기 사운드 재생
         }
 
         public override void Execute()

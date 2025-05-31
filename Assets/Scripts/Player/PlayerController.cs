@@ -14,9 +14,11 @@ namespace Player
         #endregion
 
         #region Component References
+        // 인스펙터가 길기 때문에 직접 할당이 아닌 자동으로 할당하도록
         public CharacterController CharacterControllerComponent { get; private set; }
         public PlayerAnimator PlayerAnimatorComponent { get; private set; }
         public PlayerUIManager PlayerUIComponent { get; private set; }
+        public PlayerAudioManager PlayerAudioComponent { get; private set; }
 
         // 분리된 컴포넌트들
         public PlayerInputSystem InputManagerComponent { get; private set; }
@@ -64,9 +66,11 @@ namespace Player
         public float slideInitialSpeedMultiplier = 1.5f;
         public float slideDeceleration = 2.0f;
         public float slidingColliderHeight = 0.5f;
+        public float jumpTimeMargin = 0.5f; // FallingState여도 점프가 가능한 시간
         public float StandingColliderHeight { get; private set; }
         public float StandingColliderCenterY { get; private set; }
         public float VerticalVelocity { get; set; }
+        public float FallingStartTime { get; set; } = 0f; // FallingState가 된 시간 (점프 가능 시간 계산용)
 
         // Vaulting 파라미터 (PlayerController가 직접 관리)
         [Header("Vaulting")]
@@ -128,7 +132,8 @@ namespace Player
             // 기본 컴포넌트 가져오기
             CharacterControllerComponent = GetComponent<CharacterController>();
             PlayerAnimatorComponent = GetComponentInChildren<PlayerAnimator>();
-            PlayerUIComponent = FindFirstObjectByType<PlayerUIManager>(); // Scene에 하나만 있다고 가정
+            PlayerUIComponent = FindFirstObjectByType<PlayerUIManager>();
+            PlayerAudioComponent = GetComponentInChildren<PlayerAudioManager>();
 
             InputManagerComponent = GetComponent<PlayerInputSystem>();
         }
@@ -273,12 +278,20 @@ namespace Player
         #endregion
 
         #region State Management
-        public void TransitionToState(PlayerState stateType)
+        public void TransitionToState(PlayerState newState)
         {
+            var oldState = CurrentStateType;
+
             _currentState?.Exit();
-            _currentState = _states[(int)stateType];
-            CurrentStateType = stateType;
+            _currentState = _states[(int)newState];
+            CurrentStateType = newState;
             _currentState.Enter();
+
+            // 슬라이딩, 이동 중 공중에 떠도 잠깐의 시간동안 점프를 허용
+            if ((oldState == PlayerState.Sliding || oldState == PlayerState.Moving) && newState == PlayerState.Falling)
+            {
+                FallingStartTime = Time.time;
+            }
         }
         #endregion
 
@@ -301,7 +314,17 @@ namespace Player
                 (CurrentStateType == PlayerState.Idle || CurrentStateType == PlayerState.Moving))
             {
                 DoJump();
+                return;
             }
+
+            if (CurrentStateType == PlayerState.Falling && Time.time - FallingStartTime < jumpTimeMargin)
+            {
+                // Falling 상태에서 점프 요청
+                DoJump();
+                return;
+            }
+
+            
         }
 
         private void OnCrouchInputReceived()
@@ -332,10 +355,16 @@ namespace Player
 
         public void DoJump()
         {
-            JumpRequested = true;
+            JumpRequested = false;
             VerticalVelocity = jumpPower;
             PlayerAnimatorComponent.TriggerJump();
+
             TransitionToState(PlayerState.Falling);
+
+            // 점프로 FallingState 진입시 점프 여유시간 제거
+            FallingStartTime = 0;
+
+            PlayerAudioComponent.PlaySound(PlayerAudioManager.PlayerAudioType.Jump);
         }
 
         public float CalculateObstacleDepth(RaycastHit hitInfo)

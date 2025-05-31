@@ -58,14 +58,14 @@ namespace Player.Component
             CurrentHealth -= damageAmount;
             currentInvincibilityTimer = invincibilityDuration;
             currentRegenerationTimer = regenerationCooldown; // 피격 시 재생 쿨타임 초기화
+
+            PlayerController.Instance.PlayerAudioComponent.PlaySound(PlayerAudioManager.PlayerAudioType.Hit);
         }
 
         private void HandleDeath()
         {
             // PlayerController를 통해 게임 오버 로직 호출 또는 직접 처리
-            if (_playerUIManager != null)
-                _playerUIManager.EndGame(false); // 예시: UI 매니저에 게임 오버 알림
-            // _playerController?.Die(); // PlayerController에 Die 메서드가 있다면
+            _playerUIManager.EndGame(false);
         }
 
         public void UpdateTimers() // PlayerController.Update에서 호출
@@ -73,8 +73,8 @@ namespace Player.Component
             // 체력 재생 로직
             if (CurrentHealth < maxHealth && currentRegenerationTimer <= 0f)
             {
-                CurrentHealth += regenerationAmount; // 초당 재생이 아닌, 타이머 종료 시 1회 재생으로 가정
-                currentRegenerationTimer = 1f; // 매 초 재생을 원한다면 이 부분을 조정하거나, Update에서 Time.deltaTime 누적
+                CurrentHealth += regenerationAmount;
+                currentRegenerationTimer = 0.5f;
             }
             else if (currentRegenerationTimer > 0f)
             {

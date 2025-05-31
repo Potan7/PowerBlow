@@ -7,6 +7,9 @@ namespace Player.State
         // private const float VaultMargin = 0.1f; // VaultEndPosition 계산 시 장애물로부터의 여유 공간
         private const float ClimbUpClearance = 0.5f; // 기어오르기 시 장애물 위에서의 전방 여유 공간
 
+        private float _footstepTimer = 0f; // 발소리 타이머
+        private const float FootstepInterval = 0.4f; // 발소리 간격 (초 단위)
+
         public MovingState(PlayerController player) : base(player)
         {
         }
@@ -81,18 +84,31 @@ namespace Player.State
                 return;
             }
 
-            // 애니메이션 파라미터 업데이트 (필요하다면)
-            // _player.PlayerAnimatorComponent.SetFloat("Speed", _player.CharacterControllerComponent.velocity.magnitude);
+            // 애니메이션 파라미터 업데이트
+            _player.PlayerAnimatorComponent.SetDirection(_player.MoveInput);
+
+            if (_footstepTimer <= 0f)
+            {
+                // 발소리 재생
+                _player.PlayerAudioComponent.PlaySound(PlayerAudioManager.PlayerAudioType.Footstep);
+                _footstepTimer = FootstepInterval; // 타이머 초기화
+            }
+            else
+            {
+                _footstepTimer -= Time.deltaTime; // 타이머 감소
+            }
         }
 
 
         private bool TryAttemptVaultOrClimb()
         {
-            Vector3 rayOrigin = _player.transform.position + _player.CharacterControllerComponent.center + (_player.transform.forward * _player.CharacterControllerComponent.radius);
-            // Debug.DrawRay(rayOrigin, _player.transform.forward * _player.vaultCheckDistance, Color.blue, 1f);
+            Vector3 rayOrigin = _player.transform.position + Vector3.up * 0.5f + (_player.transform.forward * _player.CharacterControllerComponent.radius);
+            Debug.DrawRay(rayOrigin, _player.transform.forward * _player.vaultCheckDistance, Color.blue, 1f);
 
             if (Physics.Raycast(rayOrigin, _player.transform.forward, out RaycastHit hitInfo, _player.vaultCheckDistance, _player.vaultableLayers))
             {
+                if (hitInfo.collider.CompareTag("Ground")) return false; // 바닥은 무시
+
                 float obstacleHeight = hitInfo.point.y - _player.transform.position.y; // 대략적인 장애물 높이 (발밑 기준)
 
                 if (obstacleHeight < _player.CharacterControllerComponent.height * _player.canVaultHeightRatio && obstacleHeight > 0.1f) // 너무 낮거나 높지 않은 장애물
@@ -139,6 +155,7 @@ namespace Player.State
                         }
                     }
                 }
+                else Debug.Log($"Obstacle too high or too low for vaulting: {obstacleHeight} (height: {_player.CharacterControllerComponent.height * _player.canVaultHeightRatio})");
             }
             return false;
         }

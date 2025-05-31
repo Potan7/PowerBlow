@@ -9,7 +9,7 @@ namespace Player.Component
         private PlayerUIManager _playerUIManager;
         private CharacterController _characterController; // 위치 계산용
 
-        // 공격 관련 설정값 (PlayerController에서 받아오거나 직접 설정)
+        // 공격 관련 설정값
         public float attackRange = 1.5f;
         public float attackPower = 10f;
         public float attackCooldown = 1f;
@@ -28,7 +28,7 @@ namespace Player.Component
             _playerUIManager = uiManager;
             _characterController = characterCtrl;
 
-            // PlayerController에서 설정값 가져오기 (예시)
+            // PlayerController에서 설정값 가져오기
             attackRange = pc.attackRange;
             attackPower = pc.attackPower;
             attackCooldown = pc.attackCooldown;
@@ -78,8 +78,14 @@ namespace Player.Component
                         }
                     }
 
-                    // 공격 후 위로 튕겨오름
-                    PlayerController.Instance.VerticalVelocity += attackJumpPower * (1 + currentChargeRatio);
+                    // 공격 후 위로 튕겨오르며 이는 중력을 초기화함
+                    if (PlayerController.Instance.VerticalVelocity < 0)
+                    {
+                        PlayerController.Instance.VerticalVelocity = 0f; // 하강 중이었다면 초기화
+                    }
+                    PlayerController.Instance.VerticalVelocity = attackJumpPower * (1 + currentChargeRatio);
+
+                    PlayerController.Instance.PlayerAudioComponent.PlaySound(PlayerAudioManager.PlayerAudioType.Attack);
                 }
 
                 _playerUIManager.SetSkillBarCooldown(attackCooldown);

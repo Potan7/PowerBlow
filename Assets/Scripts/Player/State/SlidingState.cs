@@ -33,6 +33,8 @@ namespace Player.State
             _player.ChangeViewAndCollider(true); // 슬라이딩 뷰로 변경
 
             _player.SetCameraFOV(_player.movingFOV); // Sliding 상태의 카메라 FOV 설정
+
+            _player.PlayerAudioComponent.PlaySound(PlayerAudioManager.PlayerAudioType.Slide);
         }
 
         public override void Execute()
