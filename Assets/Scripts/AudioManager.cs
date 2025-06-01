@@ -29,6 +29,7 @@ public class AudioManager : MonoBehaviour
 
     public static void SetAudioVolume(AudioType type, float volume)
     {
+        Debug.Log($"Setting volume for {type}: {volume}");
         Instance.audioMixer.SetFloat(type.ToString(), Mathf.Log10(volume) * 20); // 볼륨을 dB로 변환
     }
 
