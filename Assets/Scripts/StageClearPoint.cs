@@ -7,9 +7,12 @@ public class StageClearPoint : MonoBehaviour
     public Transform clearFlag;
     PlayerController playerController;
 
+    AudioSource audioSource;
+
     void Start()
     {
         playerController = PlayerController.Instance;
+        audioSource = GetComponent<AudioSource>();
     }
 
     void Update()
@@ -29,6 +32,8 @@ public class StageClearPoint : MonoBehaviour
 
             FindFirstObjectByType<PlayerUIManager>().EndGame(true);
             EnemyManager.Instance.ClearEnemies();
+
+            audioSource.Play();
         }
     }
 }

@@ -89,6 +89,15 @@ namespace Player.Component
         {
         }
 
+        private void OnDisable()
+        {
+            // 애니메이션이 비활성화될 때 공격 오브젝트를 숨김
+            if (attackOrb != null)
+            {
+                attackOrb.gameObject.SetActive(false);
+            }    
+        }
+
         IEnumerator AttackAnimCoroutine()
         {
             Vector3 size = Vector3.one * 0.5f;

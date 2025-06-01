@@ -45,14 +45,14 @@ public class MenuManager : MonoBehaviour
 
         for (int i = 0; i < menuButtons.Length; i++)
         {
-            int index = i; // Capture the current index
+            int index = i;
             // Debug.Log($"Menu button {i} initialized.");
             menuButtons[i].onClick.AddListener(() => OnMenuButtonClicked(index));
         }
 
         for (int i = 0; i < soundSliders.Length; i++)
         {
-            int index = i; // Capture the current index
+            int index = i;
             soundSliders[i].onValueChanged.AddListener(value => 
             {
                 AudioManager.SetAudioVolume((AudioManager.AudioType)index, value);
