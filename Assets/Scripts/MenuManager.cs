@@ -20,6 +20,8 @@ public class MenuManager : MonoBehaviour
     public static float mousePivotMin = 0.05f;
     public static float mousePivotMax = 0.5f;
 
+    bool checkTabKey = false;
+
     void Awake()
     {
         if (Instance == null)
@@ -58,6 +60,21 @@ public class MenuManager : MonoBehaviour
                 AudioManager.SetAudioVolume((AudioManager.AudioType)index, value);
             });
             soundSliders[i].value = AudioManager.GetAudioVolume((AudioManager.AudioType)i);
+        }
+    }
+
+    void Update()
+    {
+        if (mainMenu.activeSelf)
+        {
+            if (!checkTabKey && Keyboard.current.tabKey.wasReleasedThisFrame)
+            {
+                checkTabKey = true;
+            }
+            else if (checkTabKey && Keyboard.current.tabKey.wasPressedThisFrame)
+            {
+                SetMenuActive(false);
+            }
         }
     }
 
@@ -106,6 +123,8 @@ public class MenuManager : MonoBehaviour
             Time.timeScale = 1f;
 
             PlayerController.Instance?.gameObject.SetActive(true);
+
+            Instance.checkTabKey = false;
         }
     }
 

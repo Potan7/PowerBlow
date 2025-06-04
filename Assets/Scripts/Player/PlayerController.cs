@@ -236,7 +236,6 @@ namespace Player
 
             if (CurrentStateType != PlayerState.Sliding && CurrentStateType != PlayerState.Vaulting && CurrentStateType != PlayerState.ClimbingUp)
             {
-                // horizontalMovement는 이미 currentHorizontalSpeed를 반영하여 계산되었습니다.
                 CharacterControllerComponent.Move((horizontalMovement + Vector3.up * VerticalVelocity) * Time.deltaTime);
             }
             else if (CurrentStateType == PlayerState.Sliding) // 슬라이딩은 자체 속도 사용
@@ -257,7 +256,7 @@ namespace Player
             {
                 transform.position = _lastGroundedPosition;
                 VerticalVelocity = 0f;
-                StatsManagerComponent.TakeDamage(enemyDamage); // StatsManager를 통해 데미지 처리
+                StatsManagerComponent.TakeDamage(enemyDamage * 2); // StatsManager를 통해 데미지 처리
                 TransitionToState(PlayerState.Idle);
                 JumpRequested = false;
                 CrouchActive = false;

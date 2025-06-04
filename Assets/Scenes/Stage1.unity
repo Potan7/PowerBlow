@@ -29067,41 +29067,37 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 124134734047720161, guid: 8efa938e253bb9344a449e2aaa7c2356, type: 3}
-      propertyPath: maxScoreTime
-      value: 10000000
-      objectReference: {fileID: 0}
     - target: {fileID: 3861734775882159799, guid: 8efa938e253bb9344a449e2aaa7c2356, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3861734775882159799, guid: 8efa938e253bb9344a449e2aaa7c2356, type: 3}
       propertyPath: m_AnchorMin.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3861734775882159799, guid: 8efa938e253bb9344a449e2aaa7c2356, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 250
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3861734775882159799, guid: 8efa938e253bb9344a449e2aaa7c2356, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -217.5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3950697358024200584, guid: 8efa938e253bb9344a449e2aaa7c2356, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3950697358024200584, guid: 8efa938e253bb9344a449e2aaa7c2356, type: 3}
       propertyPath: m_AnchorMin.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3950697358024200584, guid: 8efa938e253bb9344a449e2aaa7c2356, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 250
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3950697358024200584, guid: 8efa938e253bb9344a449e2aaa7c2356, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -64.5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4961373187288455783, guid: 8efa938e253bb9344a449e2aaa7c2356, type: 3}
       propertyPath: m_Pivot.x
@@ -29186,10 +29182,6 @@ PrefabInstance:
     - target: {fileID: 6197108295596623977, guid: 8efa938e253bb9344a449e2aaa7c2356, type: 3}
       propertyPath: m_Name
       value: PlayerUI
-      objectReference: {fileID: 0}
-    - target: {fileID: 7252745018669700555, guid: 8efa938e253bb9344a449e2aaa7c2356, type: 3}
-      propertyPath: m_IsActive
-      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

@@ -64,8 +64,7 @@ namespace Player
             if (isClear)
             {
                 int add = maxScoreTime / (timer / 1000);
-                score += add > 0 ? add : 0; // 남은 시간에 따라 점수 추가
-                playerResultPanel.ShowGameClearPanel(timer, score);
+                playerResultPanel.ShowGameClearPanel(timer, score, add);
             }
             else
             {
@@ -119,6 +118,12 @@ namespace Player
                 StopAllCoroutines(); // 이전 코루틴 중지
                 StartCoroutine(TemporaryImageFadeInHalfCoroutine(lowHpWarningImage, 0.5f));
             }
+        }
+
+        public void OnPauseButtonClicked()
+        {
+            // PauseMenu 호출하기
+            MenuManager.SetMenuActive(true);
         }
 
         #region AnimCoroutines
