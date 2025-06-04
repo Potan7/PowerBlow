@@ -7,6 +7,7 @@ public class Mainmenu : MonoBehaviour
 {
 
     public Slider[] soundSliders;
+    public Slider mouseSensitivitySlider;
 
     void Start()
     {
@@ -22,6 +23,11 @@ public class Mainmenu : MonoBehaviour
             });
             soundSliders[i].value = AudioManager.GetAudioVolume((AudioManager.AudioType)i);
         }
+
+        mouseSensitivitySlider.minValue = MenuManager.mousePivotMin;
+        mouseSensitivitySlider.maxValue = MenuManager.mousePivotMax;
+        mouseSensitivitySlider.onValueChanged.AddListener(OnMouseSensitivityChanged);
+        mouseSensitivitySlider.value = MenuManager.mouseSensitivity;
     }
 
     public void StartGame(int stageIndex)
@@ -32,6 +38,11 @@ public class Mainmenu : MonoBehaviour
         {
             sceneLoad.allowSceneActivation = true;
         });
+    }
+
+    public void OnMouseSensitivityChanged(float value)
+    {
+        MenuManager.mouseSensitivity = Mathf.Clamp(value, MenuManager.mousePivotMin, MenuManager.mousePivotMax);
     }
 
 }

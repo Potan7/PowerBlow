@@ -16,9 +16,9 @@ public class MenuManager : MonoBehaviour
     public Slider sensitivitySlider;
 
     public bool IsMenuActive => mainMenu.activeSelf;
-    public float mouseSensitivity = 0.3f;
-    public float mousePivotMin = 0.05f;
-    public float mousePivotMax = 0.5f;
+    public static float mouseSensitivity = 0.3f;
+    public static float mousePivotMin = 0.05f;
+    public static float mousePivotMax = 0.5f;
 
     void Awake()
     {

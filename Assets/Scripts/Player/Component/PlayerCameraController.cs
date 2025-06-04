@@ -23,7 +23,7 @@ namespace Player.Component
         private float currentTargetFOVInternal; // 내부에서 사용할 currentTargetFOV
 
         // 마우스 감도는 MenuManager에서 가져옴
-        private float MouseSensitivity => MenuManager.Instance.mouseSensitivity;
+        private float MouseSensitivity => MenuManager.mouseSensitivity;
 
         public PlayerCameraController(PlayerController pc)
         {
