@@ -32,6 +32,8 @@ public class EnemyController : MonoBehaviour
     public float playerAttackDistance = 2f;
     public float removeDistance = 100f;
 
+    public int attackDamage = 20;
+
     public bool isRagdoll = false;
 
     public Collider[] attackColliders;
@@ -48,6 +50,9 @@ public class EnemyController : MonoBehaviour
     public AudioSource bodyAudioSource;
     public AudioClip[] footstepSound;
     public AudioClip[] groundHitSound;
+
+    public float overchargeDelay = 1f; // 과충전 딜레이
+    public float overchargeTime = 0;
 
 
     void Awake()
@@ -116,6 +121,20 @@ public class EnemyController : MonoBehaviour
 
         if (!_characterController.enabled || currentState == EnemyState.Ragdoll || !_navMeshAgent) return;
 
+        if (isRagdoll)
+        {
+            return;
+        }
+
+        if (overchargeTime > 0)
+        {
+            overchargeTime -= Time.deltaTime;
+            if (overchargeTime <= 0)
+            {
+                overchargeTime = 0;
+            }
+        }
+
 
         if (!_characterController.isGrounded)
         {
@@ -143,37 +162,10 @@ public class EnemyController : MonoBehaviour
             {
                 // 플레이어를 찾음
                 _navMeshAgent.SetDestination(playerPos);
-                bool isStuckOrInvalidPath = false;
+                _animator.SetBool(animatorIsMovingHash, true);
+                _animator.SetBool(animatorIsAttackingHash, false);
+                currentState = EnemyState.Moving;
 
-                if (!_navMeshAgent.pathPending) // 경로가 계산되었을 때
-                {
-                    if (_navMeshAgent.pathStatus == NavMeshPathStatus.PathInvalid ||
-                        (_navMeshAgent.pathStatus == NavMeshPathStatus.PathPartial && _navMeshAgent.velocity.sqrMagnitude < 0.01f && _navMeshAgent.remainingDistance > _navMeshAgent.stoppingDistance))
-                    {
-                        // 경로 없음, 부분 경로일 때 속도가 0이고 남은 거리가 정지 거리보다 클 때
-                        // 적이 이상한 곳에 있는 것으로 간주
-                        isStuckOrInvalidPath = true;
-                    }
-                }
-
-                if (isStuckOrInvalidPath)
-                {
-                    // 적이 이상한 곳에 있거나 경로가 유효하지 않으면 Idle 상태로 전환
-                    currentState = EnemyState.Idle;
-                    if (_navMeshAgent.isOnNavMesh)
-                    {
-                        _navMeshAgent.ResetPath();
-                    }
-                    _animator.SetBool(animatorIsMovingHash, false);
-                    _animator.SetBool(animatorIsAttackingHash, false);
-                }
-                else
-                {
-                    // 아니라면 이동 상태로 전환
-                    _animator.SetBool(animatorIsMovingHash, true);
-                    _animator.SetBool(animatorIsAttackingHash, false);
-                    currentState = EnemyState.Moving;
-                }
             }
             else if (distance > removeDistance)
             {
@@ -239,7 +231,7 @@ public class EnemyController : MonoBehaviour
         }
     }
 
-    public void Impact(Vector3 force)
+    public virtual void Impact(Vector3 force)
     {
         Debug.Log("Impact with force: " + force);
         if (disableRagdollCoroutine != null)
@@ -252,6 +244,7 @@ public class EnemyController : MonoBehaviour
 
         ragdollSpineRigidbody.AddForce(force, ForceMode.Impulse);
         disableRagdollCoroutine = StartCoroutine(DisableRagdoll(disableRagdollDelay));
+        overchargeTime = overchargeDelay; // 과충전 딜레이 설정
     }
 
     [ContextMenu("Debug Impact")]
@@ -300,13 +293,13 @@ public class EnemyController : MonoBehaviour
         float dotUp = Vector3.Dot(ragdollSpineRigidbody.transform.up, Vector3.up);
         float getUpAnimationDuration = 2.0f;
 
-        if (dotUp > 0) 
+        if (dotUp > 0)
         {
-            _animator.SetFloat(animatorGetupHash, 0.5f); 
+            _animator.SetFloat(animatorGetupHash, 0.5f);
         }
-        else 
+        else
         {
-            _animator.SetFloat(animatorGetupHash, 0f); 
+            _animator.SetFloat(animatorGetupHash, 0f);
             getUpAnimationDuration = 7f;
         }
 
@@ -316,8 +309,8 @@ public class EnemyController : MonoBehaviour
 
         // 캐릭터의 방향을 설정
         Vector3 spineForward = ragdollSpineRigidbody.transform.forward;
-        spineForward.y = 0; 
-        if (spineForward.sqrMagnitude > 0.01f) 
+        spineForward.y = 0;
+        if (spineForward.sqrMagnitude > 0.01f)
         {
             transform.rotation = Quaternion.LookRotation(spineForward.normalized, Vector3.up);
         }
@@ -369,7 +362,7 @@ public class EnemyController : MonoBehaviour
             yield break;
         }
     }
-    
+
     public void PlayGroundHitSound()
     {
         if (bodyAudioSource != null && groundHitSound.Length > 0)

@@ -10,65 +10,62 @@ namespace Player.State
 
         public override void Enter()
         {
-            // 슬라이딩 시작 시 초기 속도 설정 (oldController의 StartSliding)
-            Vector3 worldMoveDir = _player.transform.TransformDirection(new Vector3(_player.MoveInput.x, 0, _player.MoveInput.y)).normalized;
-            // 만약 진입 시 MoveInput이 없다면 (예: 착지 슬라이드), 이전 속도나 기본 전방 속도를 사용할 수 있음
-            // 현재는 MovingState에서 MoveInput이 있을 때만 진입하므로 worldMoveDir이 유효함.
-            if (worldMoveDir == Vector3.zero && _player.CharacterControllerComponent.velocity.magnitude > 0.1f) // 제자리 슬라이드 방지, 이전 이동 방향 유지 시도
-            {
-                worldMoveDir = _player.CharacterControllerComponent.velocity.normalized;
-                worldMoveDir.y = 0; // 수평 방향만 사용
-            }
-            else if (worldMoveDir == Vector3.zero) // 그래도 방향이 없으면 플레이어의 정면 사용
-            {
-                worldMoveDir = _player.transform.forward;
-            }
+            Vector3 initialSlideDirection = _player.transform.forward; // 기본 슬라이드 방향은 플레이어 정면
 
-            _player.CurrentSlidingVelocity = worldMoveDir * _player.moveSpeed * _player.slideInitialSpeedMultiplier;
+            // 입력이 있다면 해당 방향으로, 없다면 현재 이동 방향이나 정면을 사용
+            if (_player.MoveInput != Vector2.zero)
+            {
+                initialSlideDirection = _player.transform.TransformDirection(new Vector3(_player.MoveInput.x, 0, _player.MoveInput.y)).normalized;
+            }
+            else if (_player.CharacterControllerComponent.velocity.magnitude > 0.1f) // 이전 프레임의 관성이 있다면 해당 방향 사용
+            {
+                Vector3 currentVelocityDirection = _player.CharacterControllerComponent.velocity.normalized;
+                currentVelocityDirection.y = 0;
+                if (currentVelocityDirection.sqrMagnitude > 0.01f)
+                {
+                    initialSlideDirection = currentVelocityDirection;
+                }
+            }
+            _player.lastHorizontalMoveDirection = initialSlideDirection;
 
-            // 슬라이딩 애니메이션 활성화
+            // 슬라이딩 시작 시 초기 속도 설정
+            float startSpeedBase = _player.moveSpeed;
+            // 스피드 블록 위에서 슬라이딩 시작 시 추가 속도
+            if (_player.isOnSpeedBlock && _player.CharacterControllerComponent.isGrounded)
+            {
+                startSpeedBase *= 3f; // PlayerController의 스피드 블록 배율과 일치
+            }
+            // 현재 속도와 계산된 시작 속도 중 더 큰 값을 기준으로 슬라이드 배율 적용, 또는 최소 슬라이드 속도 보장
+            _player.currentHorizontalSpeed = Mathf.Max(_player.currentHorizontalSpeed, startSpeedBase) * _player.slideInitialSpeedMultiplier;
+
+
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Sliding, true);
-            _player.PlayerAnimatorComponent.SetAnim(PlayerState.Moving, false); // 다른 상태 애니메이션 비활성화
+            _player.PlayerAnimatorComponent.SetAnim(PlayerState.Moving, false); 
 
-            _player.ChangeViewAndCollider(true); // 슬라이딩 뷰로 변경
-
-            _player.SetCameraFOV(_player.movingFOV); // Sliding 상태의 카메라 FOV 설정
-
+            _player.ChangeViewAndCollider(true); 
+            _player.SetCameraFOV(_player.movingFOV); 
             _player.PlayerAudioComponent.PlaySound(PlayerAudioManager.PlayerAudioType.Slide);
         }
 
         public override void Execute()
         {
-            // 1. 지상 상태 확인: 공중에 뜨면 FallingState로 전환
             if (!_player.CharacterControllerComponent.isGrounded)
             {
-                // _player.VerticalVelocity += Physics.gravity.y * Time.deltaTime; // 중력은 계속 누적
                 _player.TransitionToState(PlayerState.Falling);
                 return;
             }
-            else if (_player.VerticalVelocity < 0) // 땅에 있고, 이전 프레임에서 하강 중이었다면 속도 안정화
-            {
-                _player.VerticalVelocity = -2f;
-            }
+            // VerticalVelocity는 PlayerController의 Update에서 이미 처리됨 (땅에 붙이는 로직 등)
 
-            // 2. 슬라이딩 종료 조건 확인:
-            //    - 웅크리기 버튼 해제
-            //    - 슬라이딩 속도가 거의 0이 된 경우
-            //    - 점프키가 입력된 경우
-            //    - 플레이어 위에 장애물이 없어야함
-
-            // 만약 플레이어 위에 장애물이 있다면 슬라이딩을 계속 진행
-            // bool isObstacleAbove = _player.CheckObstacleTopSurface();
             bool isObstacleAbove = CheckObstacleOnTop();
             if (_player.JumpRequested && !isObstacleAbove)
             {
-                _player.DoJump();
+                _player.DoJump(); // DoJump는 VerticalVelocity를 설정하고 FallingState로 전환
                 return;
             }
 
-            if ((!_player.CrouchActive || _player.CurrentSlidingVelocity.magnitude <= 0.1f) && !isObstacleAbove)
+            // 슬라이딩 종료 조건: 웅크리기 해제 또는 속도 매우 낮음 (그리고 머리 위에 장애물 없음)
+            if ((!_player.CrouchActive || _player.currentHorizontalSpeed <= 0.1f) && !isObstacleAbove)
             {
-                // 슬라이딩 종료: 웅크리기 버튼 해제 또는 슬라이딩 속도가 거의 0인 경우
                 if (_player.MoveInput != Vector2.zero)
                 {
                     _player.TransitionToState(PlayerState.Moving);
@@ -80,34 +77,18 @@ namespace Player.State
                 return;
             }
 
-            // 3. 슬라이딩 속도 감속
-            if (_player.CurrentSlidingVelocity.magnitude > 0.1f)
-            {
-                _player.CurrentSlidingVelocity -= _player.CurrentSlidingVelocity.normalized * _player.slideDeceleration * Time.deltaTime;
-                if (_player.CurrentSlidingVelocity.magnitude < 0.1f)
-                {
-                    _player.CurrentSlidingVelocity = Vector3.zero;
-                }
-            }
-
-            // 4. 이동 적용: 슬라이딩 속도와 수직 안정화 속도를 합쳐 적용
-            Vector3 horizontalMovement = _player.CurrentSlidingVelocity * Time.deltaTime;
-            Vector3 verticalMovement = _player.VerticalVelocity * Time.deltaTime * Vector3.up;
-            _player.CharacterControllerComponent.Move(horizontalMovement + verticalMovement);
+            // 슬라이딩 속도 감속은 PlayerController의 Update에서 currentHorizontalSpeed를 통해 처리됨
+            // 이동 적용도 PlayerController의 Update에서 CharacterController.Move를 통해 처리됨
         }
 
         public override void Exit()
         {
-            // Debug.Log("Exiting Sliding State");
-            // 슬라이딩 애니메이션 비활성화
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Sliding, false);
-
-            // 슬라이딩 속도 초기화
-            _player.CurrentSlidingVelocity = Vector3.zero;
-
+            // _player.CurrentSlidingVelocity = Vector3.zero; // 제거됨
             _player.CrouchActive = false;
-
             _player.ChangeViewAndCollider(false);
+            // currentHorizontalSpeed는 PlayerController에서 계속 관리되므로 여기서 초기화하지 않음.
+            // 슬라이딩 종료 후 바로 달릴 수 있도록 현재 속도 유지.
         }
 
         public bool CheckObstacleOnTop()

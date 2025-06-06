@@ -20,6 +20,7 @@ namespace Player
 
         Color normalSkillBarColor = Color.white;
         Color chargeSkillBarColor = Color.blue;
+        Color fullChargeSkillBarColor = Color.yellow;
 
         float cooldownStartTime;
         float cooldownCurrentTime;
@@ -86,16 +87,37 @@ namespace Player
 
         public void SetSkillBarCharge(float ratio)
         {
-            skillBarImage.color = Color.Lerp(normalSkillBarColor, chargeSkillBarColor, ratio);
+
+            if (ratio >= 1f)
+            {
+                skillBarImage.color = fullChargeSkillBarColor; // 완전 충전 상태
+            }
+            else if (ratio <= 0f)
+            {
+                skillBarImage.color = normalSkillBarColor; // 초기 상태
+            }
+            else
+            {
+                skillBarImage.color = Color.Lerp(normalSkillBarColor, chargeSkillBarColor, ratio);
+            }
         }
 
         public void SetSkillBarCooldown(float time)
         {
+            if (PlayerController.Instance.attackOvercharge)
+            {
+                // 공격 과충전 상태일 때는 쿨타임을 적용하지 않음
+                // PlayerController.Instance.attackOvercharge = false;
+                skillBarImage.color = fullChargeSkillBarColor;
+                return;
+            }
+
             cooldownStartTime = time;
             cooldownCurrentTime = time;
             isCooldownActive = true;
 
             skillBarImage.color = normalSkillBarColor;
+            SetSkillBarCharge(0f); // 초기화
         }
 
         public void PlayerHpChanged(int hp, int beforeHp)

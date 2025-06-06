@@ -10,13 +10,12 @@ namespace Player.Component
         private Transform headTransform;
         private Transform cameraRigTransform;
         private CinemachineCamera cinemachineCamera;
-        private GameObject speedParticle;
 
         // 설정값 (PlayerController에서 값을 받아오거나 직접 설정)
         private float pitchMin;
         private float pitchMax;
         private float idleFOV;
-        private float movingFOV;
+        // private float movingFOV;
         private float fovChangeSpeed;
 
         private float currentPitch = 0.0f;
@@ -24,6 +23,10 @@ namespace Player.Component
 
         // 마우스 감도는 MenuManager에서 가져옴
         private float MouseSensitivity => MenuManager.mouseSensitivity;
+
+        private float previousPlayerRotationY; // 이전 프레임의 플레이어 Y축 회전값
+        public bool IsRapidTurn { get; private set; } // 급회전 감지 플래그
+        public float rapidTurnThreshold = 25f; // 급회전으로 간주할 각도 (프레임당)
 
         public PlayerCameraController(PlayerController pc)
         {
@@ -33,16 +36,17 @@ namespace Player.Component
             pitchMin = pc.pitchMin;
             pitchMax = pc.pitchMax;
             idleFOV = pc.idleFOV;
-            movingFOV = pc.movingFOV;
+            // movingFOV = pc.movingFOV;
             fovChangeSpeed = pc.fovChangeSpeed;
 
             headTransform = pc.head;
             cameraRigTransform = pc.cameraTransform;
             cinemachineCamera = pc.cinemachineCamera; 
-            speedParticle = pc.speedParticle;
+            // speedParticle = pc.speedParticle;
 
             currentTargetFOVInternal = idleFOV;
             cinemachineCamera.Lens.FieldOfView = currentTargetFOVInternal;
+            previousPlayerRotationY = playerTransform.eulerAngles.y; // 초기 회전값 설정
         }
 
         public void HandleLookInput(Vector2 mouseDelta)
@@ -50,7 +54,24 @@ namespace Player.Component
             float mouseX = mouseDelta.x * MouseSensitivity;
             float mouseY = mouseDelta.y * MouseSensitivity;
 
+            // 현재 프레임의 Y축 회전 변화량 계산
+            float currentRotationY = playerTransform.eulerAngles.y;
+            float deltaRotationY = Mathf.DeltaAngle(previousPlayerRotationY, currentRotationY + mouseX); // mouseX를 더한 후의 예상 회전 변화
+
+            // 플레이어 Y축 회전 적용
             playerTransform.Rotate(Vector3.up * mouseX);
+
+            // 급회전 감지
+            if (Mathf.Abs(deltaRotationY) > rapidTurnThreshold)
+            {
+                IsRapidTurn = true;
+            }
+            else
+            {
+                IsRapidTurn = false;
+            }
+            previousPlayerRotationY = playerTransform.eulerAngles.y; // 다음 프레임을 위해 현재 회전값 저장
+
 
             currentPitch -= mouseY;
             currentPitch = Mathf.Clamp(currentPitch, pitchMin, pitchMax);
@@ -68,7 +89,7 @@ namespace Player.Component
                 cinemachineCamera.Lens.FieldOfView = targetFOV;
             }
 
-            speedParticle.SetActive(targetFOV == movingFOV);
+            // speedParticle.SetActive(targetFOV == movingFOV);
         }
 
         public void UpdateFOV()

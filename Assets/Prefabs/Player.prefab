@@ -991,8 +991,10 @@ MonoBehaviour:
   fovChangeSpeed: 10
   CurrentSlidingVelocity: {x: 0, y: 0, z: 0}
   moveSpeed: 10
-  acceleration: 10
+  acceleration: 20
   deceleration: 15
+  currentHorizontalSpeed: 0
+  rapidTurnRatio: 0.8
   jumpPower: 5
   slideInitialSpeedMultiplier: 1.2
   slideDeceleration: 3
@@ -1005,10 +1007,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   maxVaultableDepth: 1.7
-  baseVaultDuration: 0.3
+  baseVaultDuration: 0.1
   vaultDurationPerMeterDepth: 0.15
   vaultDurationPerMeterHeight: 0.1
-  minVaultDuration: 0.2
+  minVaultDuration: 0.05
   maxVaultDuration: 0.6
   minVaultClearance: 0.15
   vaultHeightMultiplier: 0.3
@@ -1018,13 +1020,14 @@ MonoBehaviour:
   wallClimbLedgeOffset: 0.5
   attackRange: 3
   attackPower: 90
-  attackCooldown: 1
+  attackCooldown: 3
   attackMinChargeTime: 0.3
   attackMaxChargeTime: 2.5
   attackJumpPower: 3
+  attackOvercharge: 0
   maxHealth: 100
   warningHp: 30
-  enemyDamage: 10
+  fallDamage: 10
   regenerationCooldown: 5
   regenerationAmount: 1
   invincibilityDuration: 0.5

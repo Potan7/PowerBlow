@@ -126,7 +126,7 @@ namespace Player.State
                             _player.VaultUpPosition = new Vector3(hitInfo.point.x, topY + _player.minVaultClearance, hitInfo.point.z) + (_player.transform.forward * (obstacleDepth * 0.3f)); // 장애물 위로 살짝 올라감
 
                             // VaultEndPosition: 장애물 너머로 안전하게 착지할 위치
-                            float vaultForwardClearance = obstacleDepth + _player.CharacterControllerComponent.radius + 0.2f; // 장애물 깊이 + 플레이어 반지름 + 여유 공간
+                            // float vaultForwardClearance = obstacleDepth + _player.CharacterControllerComponent.radius + 0.2f; // 장애물 깊이 + 플레이어 반지름 + 여유 공간
                             _player.VaultEndPosition = hitInfo.collider.ClosestPointOnBounds(_player.transform.position + _player.transform.forward * 10f); // 장애물 뒷면 근처
                             _player.VaultEndPosition = new Vector3(_player.VaultEndPosition.x, _player.VaultStartPosition.y, _player.VaultEndPosition.z) + _player.transform.forward * (_player.CharacterControllerComponent.radius + 0.2f);
 

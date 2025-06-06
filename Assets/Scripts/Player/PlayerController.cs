@@ -28,9 +28,6 @@ namespace Player
         #endregion
 
         #region Variables
-        // 이동 관련 변수 (PlayerController가 직접 관리)
-        public Vector2 MoveInput { get; private set; } // InputManager가 업데이트
-        private Vector3 _lastGroundedPosition;
 
         // 상태 패턴 관련 (PlayerController가 직접 관리)
         private PlayerStateEntity _currentState = null;
@@ -57,13 +54,15 @@ namespace Player
 
         // 이동 파라미터 (PlayerController가 직접 관리)
         [Header("Movement")]
-        public Vector3 CurrentSlidingVelocity;
-        public float moveSpeed = 5f;
+        public Vector2 MoveInput { get; private set; } // InputManager가 업데이트
+        private Vector3 _lastGroundedPosition;  // 낙하시 리셋용 위치
+        public float moveSpeed = 5f;    // 이동속도
         public float acceleration = 10f; // 초당 증가할 속도
         public float deceleration = 15f; // 초당 감소할 속도
-        private float currentHorizontalSpeed = 0f; // 현재 수평 속도
-        public float jumpPower = 5.0f;
-        public float slideInitialSpeedMultiplier = 1.5f;
+        public float currentHorizontalSpeed = 0f; // 현재 수평 속도
+        public float rapidTurnRatio = 0.8f; // 급회전 시 속도 감소 비율
+        public float jumpPower = 5.0f;  // 점프 힘
+        public float slideInitialSpeedMultiplier = 1.5f; // 슬라이딩 시작 시 초기 속도 배율
         public float slideDeceleration = 2.0f;
         public float slidingColliderHeight = 0.5f;
         public float jumpTimeMargin = 0.5f; // FallingState여도 점프가 가능한 시간
@@ -71,6 +70,8 @@ namespace Player
         public float StandingColliderCenterY { get; private set; }
         public float VerticalVelocity { get; set; }
         public float FallingStartTime { get; set; } = 0f; // FallingState가 된 시간 (점프 가능 시간 계산용)
+        public bool isOnSpeedBlock = false; // 스피드 블록 위에 있는지 여부
+        public Vector3 lastHorizontalMoveDirection = Vector3.zero; // 마지막 수평 이동 방향 저장
 
         // Vaulting 파라미터 (PlayerController가 직접 관리)
         [Header("Vaulting")]
@@ -111,12 +112,13 @@ namespace Player
         public float attackMinChargeTime = 0.5f;
         public float attackMaxChargeTime = 2f;
         public float attackJumpPower = 5f; // 공격 시 위로 튕겨오르는 힘
+        public bool attackOvercharge = false; // 공격 과충전 여부
 
         // 스탯 파라미터 (PlayerStatsManager로 이전될 값들)
         [Header("Stat Settings (for StatsManager)")]
         public int maxHealth = 100;
         public int warningHp = 30;
-        public int enemyDamage = 10; // 피격 시 기본 데미지
+        public int fallDamage = 10; // 낙하 시 기본 데미지
         public float regenerationCooldown = 5f;
         public int regenerationAmount = 1;
         public float invincibilityDuration = 0.5f;
@@ -178,69 +180,116 @@ namespace Player
         {
             _currentState?.Execute();
 
-            // --- 이동 처리 로직 ---
-            Vector3 horizontalMovement = Vector3.zero;
-            float targetSpeed = 0f;
-
-            if (CurrentStateType == PlayerState.Moving || CurrentStateType == PlayerState.Idle || CurrentStateType == PlayerState.Falling)
-            {
-                if (MoveInput != Vector2.zero)
-                {
-                    targetSpeed = moveSpeed; // 입력이 있으면 목표 속도는 moveSpeed
-                    Vector3 worldMoveDirection = transform.TransformDirection(new Vector3(MoveInput.x, 0, MoveInput.y)).normalized;
-
-                    // 현재 속도를 목표 속도로 점진적 증가
-                    if (currentHorizontalSpeed < 0.1f)
-                    {
-                        // 최초 입력시 초기 속도 설정
-                        currentHorizontalSpeed = moveSpeed / 2f; // 초기 속도를 절반으로 설정하여 부드러운 시작
-                    }
-                    currentHorizontalSpeed = Mathf.MoveTowards(currentHorizontalSpeed, targetSpeed, acceleration * Time.deltaTime);
-                    horizontalMovement = worldMoveDirection * currentHorizontalSpeed;
-                }
-                else
-                {
-                    targetSpeed = 0f; // 입력이 없으면 목표 속도는 0
-                    // 현재 속도를 목표 속도로 점진적 감소
-                    currentHorizontalSpeed = Mathf.MoveTowards(currentHorizontalSpeed, targetSpeed, deceleration * Time.deltaTime);
-                    if (currentHorizontalSpeed < 0.01f) // 아주 작은 속도일 때는 멈춘 것으로 간주
-                    {
-                        currentHorizontalSpeed = 0f; // 완전히 멈춤
-                    }
-                }
-            }
-            else // 다른 상태(슬라이딩, 볼팅 등)에서는 currentHorizontalSpeed를 리셋하거나 해당 상태의 속도 로직을 따름
-            {
-                currentHorizontalSpeed = 0f;
-            }
-
-
+            // --- Ground Check, Speed Block Detection, and Last Grounded Position ---
             if (CharacterControllerComponent.isGrounded)
             {
                 if (VerticalVelocity < 0) VerticalVelocity = -2f;
-                if (Physics.Raycast(transform.position + CharacterControllerComponent.center, Vector3.down, out RaycastHit hitInfo, CharacterControllerComponent.height / 2f + CharacterControllerComponent.skinWidth + 0.1f))
+
+                isOnSpeedBlock = false; 
+                if (Physics.Raycast(transform.position + CharacterControllerComponent.center, Vector3.down, out RaycastHit groundHitInfo, CharacterControllerComponent.height / 2f + CharacterControllerComponent.skinWidth + 0.2f))
                 {
-                    if ((vaultableLayers.value & (1 << hitInfo.collider.gameObject.layer)) > 0)
+                    if (groundHitInfo.collider.CompareTag("Speed"))
+                    {
+                        isOnSpeedBlock = true;
+                    }
+                    if ((vaultableLayers.value & (1 << groundHitInfo.collider.gameObject.layer)) > 0)
                     {
                         _lastGroundedPosition = transform.position;
                     }
                 }
             }
-            else
+            else 
             {
                 VerticalVelocity += Physics.gravity.y * Time.deltaTime;
-                // 공중에 있을 때는 수평 이동에 대한 공중 제어 로직을 추가할 수 있습니다.
-                // 예를 들어, 공중에서는 가속/감속을 다르게 적용하거나 최대 속도를 제한할 수 있습니다.
-                // 현재는 지상과 동일한 로직으로 currentHorizontalSpeed가 적용됩니다.
             }
 
-            if (CurrentStateType != PlayerState.Sliding && CurrentStateType != PlayerState.Vaulting && CurrentStateType != PlayerState.ClimbingUp)
+            // --- 이동 처리 로직 ---
+            Vector3 horizontalMovement = Vector3.zero;
+            Vector3 currentFrameWorldMoveDirection = lastHorizontalMoveDirection; // 기본적으로 마지막 이동 방향 유지
+
+            if (CurrentStateType == PlayerState.Sliding)
+            {
+                // 슬라이딩 중에는 currentHorizontalSpeed가 slideDeceleration에 의해 감속됨
+                currentHorizontalSpeed = Mathf.MoveTowards(currentHorizontalSpeed, 0f, slideDeceleration * Time.deltaTime);
+                // 슬라이딩 방향은 SlidingState 진입 시 _lastHorizontalMoveDirection에 설정된 값을 사용
+                currentFrameWorldMoveDirection = lastHorizontalMoveDirection;
+            }
+            else if (CurrentStateType == PlayerState.Moving || CurrentStateType == PlayerState.Idle || CurrentStateType == PlayerState.Falling)
+            {
+                float targetSpeed;
+                if (MoveInput != Vector2.zero)
+                {
+                    float baseSpeedForInputDirection;
+                    if (MoveInput.y > 0) 
+                    {
+                        baseSpeedForInputDirection = moveSpeed;
+                    }
+                    else 
+                    {
+                        baseSpeedForInputDirection = moveSpeed * 0.8f;
+                    }
+
+                    if (isOnSpeedBlock && CharacterControllerComponent.isGrounded)
+                    {
+                        baseSpeedForInputDirection *= 3f;
+                    }
+
+                    targetSpeed = baseSpeedForInputDirection;
+
+                    if (CameraControllerComponent.IsRapidTurn) // 급회전 감속은 슬라이딩 중에는 적용 안 함
+                    {
+                        targetSpeed *= rapidTurnRatio;
+                    }
+                    
+                    currentFrameWorldMoveDirection = transform.TransformDirection(new Vector3(MoveInput.x, 0, MoveInput.y)).normalized;
+                    lastHorizontalMoveDirection = currentFrameWorldMoveDirection; // 마지막 유효 이동 방향 업데이트
+
+                    if (currentHorizontalSpeed < 0.1f && targetSpeed > 0.01f) 
+                    {
+                        currentHorizontalSpeed = Mathf.Max(currentHorizontalSpeed, 0.1f); 
+                    }
+                    
+                    float actualAccelerationRate = (targetSpeed > currentHorizontalSpeed) ? acceleration : deceleration;
+                    currentHorizontalSpeed = Mathf.MoveTowards(currentHorizontalSpeed, targetSpeed, actualAccelerationRate * Time.deltaTime);
+                }
+                else // MoveInput == Vector2.zero (입력이 없을 때)
+                {
+                    if (CurrentStateType == PlayerState.Falling)
+                    {
+                        // 공중이고 입력이 없을 때: currentHorizontalSpeed와 _lastHorizontalMoveDirection 유지
+                        // currentFrameWorldMoveDirection은 이미 _lastHorizontalMoveDirection으로 설정됨
+                    }
+                    else // 땅 위이고 입력이 없을 때 (Idle 상태로 가는 중)
+                    {
+                        targetSpeed = 0f; 
+                        currentHorizontalSpeed = Mathf.MoveTowards(currentHorizontalSpeed, targetSpeed, deceleration * Time.deltaTime);
+                        // currentFrameWorldMoveDirection은 _lastHorizontalMoveDirection으로 유지, 속도에 따라 스케일됨
+                    }
+                }
+            }
+            // Vaulting, ClimbingUp 같은 다른 상태들은 필요시 currentHorizontalSpeed를 직접 관리하거나 0으로 설정할 수 있음
+
+            // 최종 수평 속도 및 방향 결정
+            if (currentHorizontalSpeed < 0.01f && CurrentStateType != PlayerState.Falling) // 공중 관성 제외
+            {
+                currentHorizontalSpeed = 0f;
+            }
+
+            if (currentHorizontalSpeed == 0f && CharacterControllerComponent.isGrounded)
+            {
+                 currentFrameWorldMoveDirection = Vector3.zero; // 완전히 멈췄으면 이동 방향 없음
+            }
+            horizontalMovement = currentFrameWorldMoveDirection * currentHorizontalSpeed;
+
+            // 속도가 어느정도 커지면 파티클 활성화
+            speedParticle.SetActive(currentHorizontalSpeed > 0.3f);
+
+
+            // --- 최종 이동 적용 ---
+            // 슬라이딩 상태도 이 공통 이동 로직을 사용
+            if (CurrentStateType != PlayerState.Vaulting && CurrentStateType != PlayerState.ClimbingUp)
             {
                 CharacterControllerComponent.Move((horizontalMovement + Vector3.up * VerticalVelocity) * Time.deltaTime);
-            }
-            else if (CurrentStateType == PlayerState.Sliding) // 슬라이딩은 자체 속도 사용
-            {
-                CharacterControllerComponent.Move((CurrentSlidingVelocity + Vector3.up * VerticalVelocity) * Time.deltaTime);
             }
             // Vaulting, Climbing은 상태 내에서 CharacterController.Move를 직접 호출하거나, PlayerController에 목표 위치를 전달하여 이동
 
@@ -256,7 +305,8 @@ namespace Player
             {
                 transform.position = _lastGroundedPosition;
                 VerticalVelocity = 0f;
-                StatsManagerComponent.TakeDamage(enemyDamage * 2); // StatsManager를 통해 데미지 처리
+                currentHorizontalSpeed = 0f;
+                StatsManagerComponent.TakeDamage(fallDamage);
                 TransitionToState(PlayerState.Idle);
                 JumpRequested = false;
                 CrouchActive = false;
@@ -382,7 +432,7 @@ namespace Player
 
         public void ChangeViewAndCollider(bool isSlidingView) // 주로 상태에서 호출
         {
-            CameraControllerComponent.ChangeCameraFollowTarget(isSlidingView); // 카메라 부분 위임
+            CameraControllerComponent.ChangeCameraFollowTarget(isSlidingView); // 카메라 부분 처리
 
             // 콜라이더 변경은 PlayerController가 직접
             if (isSlidingView)
@@ -404,7 +454,7 @@ namespace Player
 
         public void SetCameraFOV(float targetFOV, bool immediate = false) // 상태에서 호출
         {
-            CameraControllerComponent.SetCameraFOV(targetFOV, immediate); // 카메라 부분 위임
+            CameraControllerComponent.SetCameraFOV(targetFOV, immediate); // 카메라 부분 처리
         }
         #endregion
     }

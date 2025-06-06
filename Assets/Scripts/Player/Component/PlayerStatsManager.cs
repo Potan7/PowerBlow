@@ -8,8 +8,6 @@ namespace Player.Component
 
         // 스탯 관련 설정값 (PlayerController에서 받아오거나 직접 설정)
         public int maxHealth = 100;
-        public int warningHp = 30; // UI 표시용
-        public int enemyDamage = 10; // 피격 시 기본 데미지 (외부에서 설정 가능)
         public float regenerationCooldown = 5f;
         public int regenerationAmount = 1;
         public float invincibilityDuration = 0.5f;
@@ -42,8 +40,6 @@ namespace Player.Component
 
             // PlayerController에서 설정값 가져오기 (예시)
             maxHealth = pc.maxHealth;
-            warningHp = pc.warningHp;
-            enemyDamage = pc.enemyDamage;
             regenerationCooldown = pc.regenerationCooldown;
             regenerationAmount = pc.regenerationAmount;
             invincibilityDuration = pc.invincibilityDuration;

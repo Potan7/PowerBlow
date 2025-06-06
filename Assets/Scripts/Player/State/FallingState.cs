@@ -17,8 +17,6 @@ namespace Player.State
             // 낙하 애니메이션 활성화
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Falling, true);
 
-            _player.CurrentSlidingVelocity = Vector3.zero; // 혹시 모를 슬라이딩 속도 초기화
-
             // 진입 시 이동 입력에 따라 초기 FOV 설정
             _wasMovingLastFrameInAir = _player.MoveInput != Vector2.zero;
             _player.SetCameraFOV(_wasMovingLastFrameInAir ? _player.movingFOV : _player.idleFOV);
