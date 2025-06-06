@@ -276,7 +276,9 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Back to Title
+  m_text: 'End
+
+    (Back To Title)'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ed7db13b29ad4d541a22ca3279e36dc3, type: 2}
   m_sharedMaterial: {fileID: 3933025959073725393, guid: ed7db13b29ad4d541a22ca3279e36dc3, type: 2}
@@ -319,7 +321,7 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_TextWrappingMode: 1
+  m_TextWrappingMode: 0
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
@@ -2150,7 +2152,7 @@ MonoBehaviour:
   titleText: {fileID: 4546041984777875863}
   scoreText: {fileID: 2939115721014817649}
   timeText: {fileID: 6603524114404720034}
-  restartButtonText: {fileID: 1961918208962063891}
+  downButtonText: {fileID: 4023767560875846973}
   buttons:
   - {fileID: 4828444218482927854}
   - {fileID: 3305859513687748029}

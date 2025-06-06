@@ -14,7 +14,7 @@ namespace Player
         public TextMeshProUGUI titleText;
         public TextMeshProUGUI scoreText;
         public TextMeshProUGUI timeText;
-        public TextMeshProUGUI restartButtonText;
+        public TextMeshProUGUI downButtonText;
 
         const string ScoreFormat = "Score: {0:D6}"; // 점수 표시 형식 (6자리 숫자)
         const string ScoreWithAdditionalFormat = "Score: {0:D6} (+{1:D6})"; // 추가 점수 표시 형식
@@ -45,7 +45,7 @@ namespace Player
             titleText.text = "Game Over";
             scoreText.text = string.Format(ScoreFormat, score);
             timeText.text = string.Format(TimeFormat, time / 1000, time % 1000);
-            restartButtonText.text = "Restart";
+            downButtonText.text = "Back To Main Menu";
             isClear = false;
 
             // 패널 띄우기
@@ -65,14 +65,14 @@ namespace Player
             titleText.text = "Stage Clear";
             // scoreText.text = string.Format(ScoreFormat, score);
             timeText.text = string.Format(TimeFormat, time / 1000, time % 1000);
-            restartButtonText.text = "Next Stage";
+            downButtonText.text = "Next Stage";
             isClear = true;
 
             // 만약 마지막 스테이지라면 버튼 텍스트 변경
             int buildCount = SceneManager.sceneCountInBuildSettings;
             if (SceneManager.GetActiveScene().buildIndex + 1 >= buildCount)
             {
-                restartButtonText.text = "End(Retry)";
+                downButtonText.text = "End\n(Back To Title)";
             }
 
             // 패널 띄우기
@@ -84,16 +84,19 @@ namespace Player
             AsyncOperation sceneLoad = null;
             if (index == 0)
             {
-                int currentSceneIndex = SceneManager.GetActiveScene().buildIndex + (isClear ? 1 : 0);
-                if (currentSceneIndex >= SceneManager.sceneCountInBuildSettings)
-                {
-                    currentSceneIndex--;
-                }
-                sceneLoad = SceneManager.LoadSceneAsync(currentSceneIndex);
+                sceneLoad = SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().buildIndex);
             }
             else
             {
-                sceneLoad = SceneManager.LoadSceneAsync("Mainmenu");
+                if (isClear && SceneManager.GetActiveScene().buildIndex + 1 < SceneManager.sceneCountInBuildSettings)
+                {
+                    sceneLoad = SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().buildIndex + 1);
+                }
+                else
+                {
+                    // 마지막 스테이지이거나 사망시 메인 메뉴로 이동 버튼
+                    sceneLoad = SceneManager.LoadSceneAsync("Mainmenu");
+                }
             }
 
             sceneLoad.allowSceneActivation = false;
