@@ -52,8 +52,8 @@ namespace Player
         public float movingFOV = 80f;
         public float fovChangeSpeed = 10f;
 
-        // 이동 파라미터 (PlayerController가 직접 관리)
-        [Header("Movement")]
+        // 이동 파라미터
+        [Header("Movement Settings")]
         public Vector2 MoveInput { get; private set; } // InputManager가 업데이트
         private Vector3 _lastGroundedPosition;  // 낙하시 리셋용 위치
         public float moveSpeed = 5f;    // 이동속도

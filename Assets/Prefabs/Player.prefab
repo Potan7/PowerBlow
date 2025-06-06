@@ -989,10 +989,9 @@ MonoBehaviour:
   idleFOV: 75
   movingFOV: 85
   fovChangeSpeed: 10
-  CurrentSlidingVelocity: {x: 0, y: 0, z: 0}
   moveSpeed: 10
   acceleration: 20
-  deceleration: 15
+  deceleration: 25
   currentHorizontalSpeed: 0
   rapidTurnRatio: 0.8
   jumpPower: 5
@@ -1000,6 +999,8 @@ MonoBehaviour:
   slideDeceleration: 3
   slidingColliderHeight: 0.5
   jumpTimeMargin: 0.5
+  isOnSpeedBlock: 0
+  lastHorizontalMoveDirection: {x: 0, y: 0, z: 0}
   vaultCheckDistance: 1
   canVaultHeightRatio: 0.55
   vaultLayerMask: 6
