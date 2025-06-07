@@ -11,13 +11,13 @@ namespace Player.Component
         private CharacterController _characterController; // 위치 계산용
 
         // 공격 관련 설정값
-        public float attackRange = 1.5f;
-        public float attackPower = 10f;
-        public float attackCooldown = 1f;
-        public float attackMinChargeTime = 0.5f;
-        public float attackMaxChargeTime = 2f;
-
-        public float attackJumpPower = 5f; // 공격 시 위로 튕겨오르는 힘
+        public float attackRange; // PlayerController에서 설정값 가져오므로 public 유지 또는 private으로 변경 후 생성자에서만 할당
+        public float attackPower;
+        public float attackCooldown;
+        public float attackMinChargeTime;
+        public float attackMaxChargeTime;
+        public float attackJumpPower; // 공격 시 위로 튕겨오르는 힘
+        private float attackForwardPower; // 공격 시 앞으로 나아가는 힘 (PlayerController에서 가져옴)
 
         private float currentAttackChargeTime = 0f;
         private bool isAttackChargingInternal = false;
@@ -25,24 +25,24 @@ namespace Player.Component
 
         public PlayerAttackController(PlayerController pc, PlayerAnimator animator, PlayerUIManager uiManager, CharacterController characterCtrl)
         {
+            _playerController = pc; // _playerController를 먼저 할당
             _playerAnimator = animator;
             _playerUIManager = uiManager;
             _characterController = characterCtrl;
 
             // PlayerController에서 설정값 가져오기
-            attackRange = pc.attackRange;
-            attackPower = pc.attackPower;
-            attackCooldown = pc.attackCooldown;
-            attackMinChargeTime = pc.attackMinChargeTime;
-            attackMaxChargeTime = pc.attackMaxChargeTime;
-            attackJumpPower = pc.attackJumpPower;
-
-            _playerController = pc;
+            attackRange = _playerController.attackRange;
+            attackPower = _playerController.attackPower;
+            attackCooldown = _playerController.attackCooldown;
+            attackMinChargeTime = _playerController.attackMinChargeTime;
+            attackMaxChargeTime = _playerController.attackMaxChargeTime;
+            attackJumpPower = _playerController.attackJumpPower;
+            attackForwardPower = _playerController.attackForwardPower; // 새로 추가된 설정값 가져오기
         }
 
         public void HandleAttackInput(InputAction.CallbackContext context)
         {
-            if (_playerUIManager == null || _playerAnimator == null || _characterController == null) return;
+            if (_playerUIManager == null || _playerAnimator == null || _characterController == null || _playerController == null) return;
 
             if (_playerUIManager.isCooldownActive || (context.canceled && !isAttackChargingInternal))
             {
@@ -66,9 +66,8 @@ namespace Player.Component
                 {
                     _playerAnimator.TriggerAttack();
 
-                    // 공격 위치는 CharacterController의 현재 위치를 기준으로
                     Vector3 attackCenter = _characterController.transform.position + Vector3.up * (_characterController.height * 0.5f);
-                    float currentChargeRatio = currentAttackChargeTime / attackMaxChargeTime; // 0~1 사이 값
+                    float currentChargeRatio = Mathf.Clamp01(currentAttackChargeTime / attackMaxChargeTime); // 0~1 사이 값 보장
                     float currentAttackRange = attackRange * (1 + currentChargeRatio * 0.5f); // 차지 시간에 따라 범위 약간 증가
                     float currentAttackPower = attackPower * (1 + currentChargeRatio); // 차지 시간에 따라 파워 증가
 
@@ -90,21 +89,31 @@ namespace Player.Component
                         }
                     }
 
-                    // 공격 후 위로 튕겨오르며 이는 중력을 초기화함
-                    if (PlayerController.Instance.VerticalVelocity < 0)
+                    // 공격 후 위로 튕겨오르기
+                    if (_playerController.VerticalVelocity < 0)
                     {
-                        PlayerController.Instance.VerticalVelocity = 0f; // 하강 중이었다면 초기화
+                        _playerController.VerticalVelocity = 0f; // 하강 중이었다면 초기화
                     }
-                    PlayerController.Instance.VerticalVelocity = attackJumpPower * (1 + currentChargeRatio);
+                    _playerController.VerticalVelocity = attackJumpPower * (1 + currentChargeRatio);
 
-                    PlayerController.Instance.PlayerAudioComponent.PlaySound(PlayerAudioManager.PlayerAudioType.Attack);
+                    // 공격 후 바라보는 방향으로 힘 적용
+                    Vector3 forwardDirection = _playerController.transform.forward; // 플레이어(카메라)의 정면 방향
+                    forwardDirection.y = 0; // 수평 방향만 사용
+
+                    if (forwardDirection.sqrMagnitude > 0.001f) // 유효한 수평 방향일 경우
+                    {
+                        forwardDirection.Normalize();
+                        _playerController.lastHorizontalMoveDirection = forwardDirection;
+                        _playerController.currentHorizontalSpeed += attackForwardPower * (1 + currentChargeRatio);
+                    }
+                    // else: 수평 방향이 거의 없으면 (정면이 수직에 가까움) 수평 힘은 적용하지 않음.
+
+                    _playerController.PlayerAudioComponent.PlaySound(PlayerAudioManager.PlayerAudioType.Attack);
                 }
 
                 _playerUIManager.SetSkillBarCooldown(attackCooldown);
                 currentAttackChargeTime = 0f;
                 // _playerUIManager.SetSkillBarCharge(0);
-
-                // 공격 후엔 위로 잠깐 상승함
             }
         }
 

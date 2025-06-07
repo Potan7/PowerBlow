@@ -29,8 +29,8 @@ namespace Player.State
             // _player.VerticalVelocity += Physics.gravity.y * Time.deltaTime; 
 
             // 2. 수평 이동 (공중 제어): 플레이어 입력에 따라 공중에서도 약간의 수평 이동을 허용합니다.
-            Vector3 horizontalMovement = Vector3.zero;
-            Vector3 worldMoveDirection = Vector3.zero;
+            // Vector3 horizontalMovement = Vector3.zero;
+            // Vector3 worldMoveDirection = Vector3.zero;
             bool isCurrentlyMovingInAir = _player.MoveInput != Vector2.zero;
 
             // if (isCurrentlyMovingInAir)

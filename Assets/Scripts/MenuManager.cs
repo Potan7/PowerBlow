@@ -80,7 +80,7 @@ public class MenuManager : MonoBehaviour
 
     private void OnMenuButtonClicked(int index)
     {
-        Debug.Log($"Menu button clicked: {index}");
+        // Debug.Log($"Menu button clicked: {index}");
         SetMenuActive(false);
         if (index == 0)
         {

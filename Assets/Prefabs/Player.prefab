@@ -991,7 +991,10 @@ MonoBehaviour:
   fovChangeSpeed: 10
   moveSpeed: 10
   acceleration: 20
-  deceleration: 25
+  deceleration: 50
+  airDeceleration: 5
+  airControlAcceleration: 8
+  airSteeringRate: 5
   currentHorizontalSpeed: 0
   rapidTurnRatio: 0.8
   jumpPower: 5
@@ -1003,11 +1006,11 @@ MonoBehaviour:
   lastHorizontalMoveDirection: {x: 0, y: 0, z: 0}
   vaultCheckDistance: 1
   canVaultHeightRatio: 0.55
-  vaultLayerMask: 6
   vaultableLayers:
     serializedVersion: 2
     m_Bits: 8
-  maxVaultableDepth: 1.7
+  maxVaultableDepth: 1
+  vaultLayerMask: 6
   baseVaultDuration: 0.1
   vaultDurationPerMeterDepth: 0.15
   vaultDurationPerMeterHeight: 0.1
@@ -1021,10 +1024,11 @@ MonoBehaviour:
   wallClimbLedgeOffset: 0.5
   attackRange: 3
   attackPower: 90
-  attackCooldown: 3
+  attackCooldown: 2
   attackMinChargeTime: 0.3
   attackMaxChargeTime: 2.5
   attackJumpPower: 3
+  attackForwardPower: 2
   attackOvercharge: 0
   maxHealth: 100
   warningHp: 30

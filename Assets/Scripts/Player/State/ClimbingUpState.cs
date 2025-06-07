@@ -67,6 +67,9 @@ namespace Player.State
             _player.gameObject.layer = _player.OriginalPlayerLayer;
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.ClimbingUp, false);
             _player.InputManagerComponent.EnablePlayerActions();
+
+            _player.currentHorizontalSpeed = 0;
+            _player.VerticalVelocity = 0;
         }
     }
 }

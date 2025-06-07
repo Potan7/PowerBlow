@@ -59,7 +59,10 @@ namespace Player.State
             _player.gameObject.layer = _player.OriginalPlayerLayer;
             _player.PlayerAnimatorComponent.SetAnim(PlayerState.Vaulting, false);
             _player.InputManagerComponent.EnablePlayerActions();
-            // 필요한 경우 VerticalVelocity 재설정
+
+
+            _player.currentHorizontalSpeed = 0; // 뛰어넘기 후 수평 속도 초기화
+            _player.VerticalVelocity = 0; // 뛰어넘기 후 수직 속도 초기화
         }
     }
 }
