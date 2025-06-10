@@ -76,12 +76,12 @@ namespace Player
                     int bestScore = PlayerPrefs.GetInt(scoreKey);
                     if (score > bestScore)
                     {
-                        PlayerPrefs.SetInt(scoreKey, score);
+                        PlayerPrefs.SetInt(scoreKey, score + add);
                     }
                 }
                 else
                 {
-                    PlayerPrefs.SetInt(scoreKey, score);
+                    PlayerPrefs.SetInt(scoreKey, score + add);
                 }
                 if (PlayerPrefs.HasKey(timerKey))
                 {
@@ -176,6 +176,11 @@ namespace Player
             // PauseMenu 호출하기
             MenuManager.SetMenuActive(true);
         }
+
+        // She is better than you
+        // tall taller tallest
+        // She is taller than you
+        // She is the tallest
 
         #region AnimCoroutines
 

@@ -288,9 +288,7 @@ namespace Player
                     // 입력에 따른 목표 수평 속도 벡터
                     Vector3 targetHorizontalVelocity = targetInputDirection * Mathf.Max(targetAirSpeed, currentHorizontalSpeed);
 
-                    // 현재 속도 벡터를 목표 속도 벡터로 점진적으로 변경
-                    // 이 함수는 방향과 속도 모두를 점진적으로 변경하며,
-                    // 반대 방향 입력 시 속도가 0을 거쳐 반대 방향으로 증가하는 것을 자연스럽게 처리합니다.
+                    // 공중에서 입력 방향으로 속도 변경
                     currentHorizontalVelocity = Vector3.MoveTowards(currentHorizontalVelocity, targetHorizontalVelocity, airControlAcceleration * Time.deltaTime);
 
                     // 변경된 속도 벡터에서 실제 속력과 방향을 다시 추출
@@ -304,23 +302,20 @@ namespace Player
                     {
                         // 속도가 거의 0이 되었고 입력이 있다면, 다음 프레임부터 해당 입력 방향으로 움직일 수 있도록 방향 설정
                         lastHorizontalMoveDirection = targetInputDirection;
-                        // currentHorizontalSpeed는 0이므로, 다음 프레임에서 targetInputDirection으로 가속 시작
                     }
                 }
-                // else: 유효하지 않은 targetInputDirection (거의 발생하지 않음)
             }
             else // 공중에서 이동 입력이 없을 때
             {
                 // 입력이 없으면 공중 감속 적용
                 currentHorizontalSpeed = Mathf.MoveTowards(currentHorizontalSpeed, 0f, airDeceleration * Time.deltaTime);
-                // 이 경우 lastHorizontalMoveDirection은 유지되어, 관성에 의해 기존 방향으로 느려짐
             }
 
             // 속도가 매우 작으면 0으로 처리
             if (currentHorizontalSpeed < 0.01f)
             {
                 currentHorizontalSpeed = 0f;
-                // 입력이 없고 속도가 0이 되면, lastHorizontalMoveDirection은 이전 값을 유지하거나 필요시 초기화 가능
+                // 입력이 없고 속도가 0이 되면, lastHorizontalMoveDirection은 이전 값을 유지
             }
         }
 

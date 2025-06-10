@@ -54,7 +54,6 @@ public class EnemyController : MonoBehaviour
     public float overchargeDelay = 1f; // 과충전 딜레이
     public float overchargeTime = 0;
 
-
     void Awake()
     {
         if (_characterController == null)
@@ -92,7 +91,6 @@ public class EnemyController : MonoBehaviour
 
     public void Active()
     {
-
         foreach (var collider in ragdollColliders)
         {
             collider.enabled = false;
@@ -134,7 +132,6 @@ public class EnemyController : MonoBehaviour
                 overchargeTime = 0;
             }
         }
-
 
         if (!_characterController.isGrounded)
         {
@@ -192,7 +189,6 @@ public class EnemyController : MonoBehaviour
             }
         }
     }
-
 
     void OnFootstep(AnimationEvent animationEvent)
     {
