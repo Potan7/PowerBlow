@@ -104,7 +104,10 @@ namespace Player.Component
                     {
                         forwardDirection.Normalize();
                         _playerController.lastHorizontalMoveDirection = forwardDirection;
-                        _playerController.currentHorizontalSpeed += attackForwardPower * (1 + currentChargeRatio);
+
+                        // 최고 속도보다 낮으면 속도 증가
+                        if (_playerController.currentHorizontalSpeed < _playerController.moveSpeed)
+                            _playerController.currentHorizontalSpeed += attackForwardPower * (1 + currentChargeRatio);
                     }
                     // else: 수평 방향이 거의 없으면 (정면이 수직에 가까움) 수평 힘은 적용하지 않음.
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace Player
@@ -66,6 +67,34 @@ namespace Player
             {
                 int add = maxScoreTime / (timer / 1000);
                 playerResultPanel.ShowGameClearPanel(timer, score, add);
+
+                string sceneName = Mainmenu.sceneNames[SceneManager.GetActiveScene().buildIndex - 1]; // 현재 씬 이름 가져오기
+                string scoreKey = "Score_" + sceneName;
+                string timerKey = "Timer_" + sceneName;
+                if (PlayerPrefs.HasKey(scoreKey))
+                {
+                    int bestScore = PlayerPrefs.GetInt(scoreKey);
+                    if (score > bestScore)
+                    {
+                        PlayerPrefs.SetInt(scoreKey, score);
+                    }
+                }
+                else
+                {
+                    PlayerPrefs.SetInt(scoreKey, score);
+                }
+                if (PlayerPrefs.HasKey(timerKey))
+                {
+                    int bestTimer = PlayerPrefs.GetInt(timerKey);
+                    if (timer < bestTimer)
+                    {
+                        PlayerPrefs.SetInt(timerKey, timer);
+                    }
+                }
+                else
+                {
+                    PlayerPrefs.SetInt(timerKey, timer);
+                }
             }
             else
             {

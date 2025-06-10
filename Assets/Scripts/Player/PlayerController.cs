@@ -61,9 +61,9 @@ namespace Player
         public float moveSpeed = 5f;    // 기본 이동 속도
         public float acceleration = 10f; // 가속도
         public float deceleration = 15f; // 감속도 (지상)
-        public float airDeceleration = 5f; // 공중 감속도 (W키 관성 없을 때, 입력 없을 시)
+        public float airDeceleration = 5f; // 공중 감속도 (입력 없을 시)
         public float airControlAcceleration = 8f; // 공중에서 새 입력 방향으로 속도 변경 가속도
-        public float airSteeringRate = 5f; // 공중에서 W키 관성 유지 시 카메라 방향으로 조향되는 속도
+        public float airSteeringRate = 5f; // 공중에서 방향 전환 시 회전 속도
         public float currentHorizontalSpeed = 0f; // 현재 수평 속도
         public float rapidTurnRatio = 0.8f; // 급회전 시 속도 감소 비율
         public float jumpPower = 5.0f; // 점프 힘
@@ -77,7 +77,7 @@ namespace Player
         public float FallingStartTime { get; set; } = 0f; // 낙하 시작 시간 (코요테 타임용)
         public bool isOnSpeedBlock = false; // 스피드 블록 위에 있는지 여부
         public Vector3 lastHorizontalMoveDirection = Vector3.zero; // 마지막 수평 이동 방향
-        private bool _maintainInertiaOnJump = false; // W키 점프 관성 유지 여부
+        // private bool _maintainInertiaOnJump = false; // W키 점프 관성 유지 여부 - 제거됨
 
         [Header("Vaulting")]
         // 볼팅 관련 설정값
@@ -172,7 +172,7 @@ namespace Player
             // 카메라 초기 FOV 설정 및 초기 상태 전환
             CameraControllerComponent.SetCameraFOV(idleFOV, true);
             TransitionToState(PlayerState.Idle);
-
+ 
             // 입력 이벤트 구독
             InputManagerComponent.MoveEvent += OnMoveInputReceived;
             InputManagerComponent.LookEvent += CameraControllerComponent.HandleLookInput;
@@ -223,7 +223,7 @@ namespace Player
             if (CharacterControllerComponent.isGrounded) // 캐릭터 컨트롤러가 지면에 닿아있는지 확인
             {
                 if (VerticalVelocity < 0) VerticalVelocity = -2f; // 지면에 붙어있도록 수직 속도 조절
-                _maintainInertiaOnJump = false; // 지면에 닿으면 W키 점프 관성 해제
+                // _maintainInertiaOnJump = false; // 지면에 닿으면 W키 점프 관성 해제 - 지워야함
 
                 isOnSpeedBlock = false; // 스피드 블록 위에 있는지 기본값 false로 초기화
                 // 캐릭터 발밑으로 레이캐스트하여 지면 정보 확인
@@ -273,56 +273,54 @@ namespace Player
         // HandleAirMovement: 공중 상태에서의 이동 및 관성 처리
         private void HandleAirMovement()
         {
-            Vector3 currentAirVelocity = lastHorizontalMoveDirection * currentHorizontalSpeed; // 현재 공중 속도 벡터
+            float targetAirSpeed = moveSpeed * 0.8f; // 공중 목표 속도
 
             if (MoveInput != Vector2.zero) // 공중에서 이동 입력이 있을 때
             {
-                _maintainInertiaOnJump = false; // 새로운 공중 입력은 W키 관성을 해제
                 // 입력 방향을 월드 좌표 기준으로 변환 및 정규화
                 Vector3 targetInputDirection = transform.TransformDirection(new Vector3(MoveInput.x, 0, MoveInput.y)).normalized;
-                float targetAirSpeed = moveSpeed * 0.8f; // 공중에서 입력으로 도달 가능한 최대 속도 (지상보다 약간 낮게 설정)
-                Vector3 targetAirVelocity = targetInputDirection * targetAirSpeed; // 목표 공중 속도 벡터
 
-                // 현재 공중 속도 벡터를 목표 공중 속도 벡터로 점진적 변경 (공중 제어 가속도 사용)
-                currentAirVelocity = Vector3.MoveTowards(currentAirVelocity, targetAirVelocity, airControlAcceleration * Time.deltaTime);
+                if (targetInputDirection.sqrMagnitude > 0.001f) // 유효한 입력 방향일 때
+                {
+                    // 현재 플레이어의 수평 속도 벡터
+                    Vector3 currentHorizontalVelocity = lastHorizontalMoveDirection * currentHorizontalSpeed;
 
-                currentHorizontalSpeed = currentAirVelocity.magnitude; // 변경된 속도 벡터의 크기를 현재 수평 속도로 업데이트
-                if (currentHorizontalSpeed > 0.01f) // 속도가 매우 작지 않으면
-                {
-                    lastHorizontalMoveDirection = currentAirVelocity.normalized; // 이동 방향 업데이트
+                    // 입력에 따른 목표 수평 속도 벡터
+                    Vector3 targetHorizontalVelocity = targetInputDirection * Mathf.Max(targetAirSpeed, currentHorizontalSpeed);
+
+                    // 현재 속도 벡터를 목표 속도 벡터로 점진적으로 변경
+                    // 이 함수는 방향과 속도 모두를 점진적으로 변경하며,
+                    // 반대 방향 입력 시 속도가 0을 거쳐 반대 방향으로 증가하는 것을 자연스럽게 처리합니다.
+                    currentHorizontalVelocity = Vector3.MoveTowards(currentHorizontalVelocity, targetHorizontalVelocity, airControlAcceleration * Time.deltaTime);
+
+                    // 변경된 속도 벡터에서 실제 속력과 방향을 다시 추출
+                    currentHorizontalSpeed = currentHorizontalVelocity.magnitude;
+
+                    if (currentHorizontalSpeed > 0.01f)
+                    {
+                        lastHorizontalMoveDirection = currentHorizontalVelocity.normalized;
+                    }
+                    else
+                    {
+                        // 속도가 거의 0이 되었고 입력이 있다면, 다음 프레임부터 해당 입력 방향으로 움직일 수 있도록 방향 설정
+                        lastHorizontalMoveDirection = targetInputDirection;
+                        // currentHorizontalSpeed는 0이므로, 다음 프레임에서 targetInputDirection으로 가속 시작
+                    }
                 }
-                else // 속도가 거의 0이면
-                {
-                    // 방향은 마지막 입력 방향으로 설정 (다음에 움직일 때를 위해), 또는 기존 방향 유지
-                    lastHorizontalMoveDirection = targetInputDirection.sqrMagnitude > 0.01f ? targetInputDirection : lastHorizontalMoveDirection;
-                    currentHorizontalSpeed = 0f; // 확실하게 0으로 설정
-                }
+                // else: 유효하지 않은 targetInputDirection (거의 발생하지 않음)
             }
             else // 공중에서 이동 입력이 없을 때
             {
-                if (_maintainInertiaOnJump) // W키 점프 관성 유지 중일 때
-                {
-                    Vector3 cameraForward = transform.forward; // 현재 카메라(플레이어) 정면 방향
-                    cameraForward.y = 0; // 수평면으로 투영
-                    if (cameraForward.sqrMagnitude > 0.01f) // 유효한 카메라 방향인지 확인
-                    {
-                         cameraForward.Normalize();
-                         // 현재 운동량 방향을 카메라 방향으로 부드럽게 회전 (Slerp 사용, 공중 조향 속도 적용)
-                         if(lastHorizontalMoveDirection.sqrMagnitude > 0.01f) // 기존 방향이 있어야 Slerp 가능
-                         {
-                            lastHorizontalMoveDirection = Vector3.Slerp(lastHorizontalMoveDirection, cameraForward, airSteeringRate * Time.deltaTime).normalized;
-                         }
-                         else // 기존 방향이 없었다면 (예: 수직 점프 후 W키 유지) 카메라 방향으로 설정
-                         {
-                            lastHorizontalMoveDirection = cameraForward;
-                         }
-                    }
-                    // currentHorizontalSpeed는 유지 (또는 필요시 약간 감속)
-                }
-                else // W키 관성 없거나 해제됨: 일반 공중 감속
-                {
-                    currentHorizontalSpeed = Mathf.MoveTowards(currentHorizontalSpeed, 0f, airDeceleration * Time.deltaTime);
-                }
+                // 입력이 없으면 공중 감속 적용
+                currentHorizontalSpeed = Mathf.MoveTowards(currentHorizontalSpeed, 0f, airDeceleration * Time.deltaTime);
+                // 이 경우 lastHorizontalMoveDirection은 유지되어, 관성에 의해 기존 방향으로 느려짐
+            }
+
+            // 속도가 매우 작으면 0으로 처리
+            if (currentHorizontalSpeed < 0.01f)
+            {
+                currentHorizontalSpeed = 0f;
+                // 입력이 없고 속도가 0이 되면, lastHorizontalMoveDirection은 이전 값을 유지하거나 필요시 초기화 가능
             }
         }
 
@@ -356,7 +354,7 @@ namespace Player
             {
                 targetSpeedOnGround = 0f; // 목표 속도는 0
                 currentHorizontalSpeed = Mathf.MoveTowards(currentHorizontalSpeed, targetSpeedOnGround, deceleration * Time.deltaTime); // 감속
-                _maintainInertiaOnJump = false; // 지상에서 입력 없으면 W키 관성 해제
+                // _maintainInertiaOnJump = false; // 지상에서 입력 없으면 W키 관성 해제 - 지워야함
             }
         }
 
@@ -453,7 +451,7 @@ namespace Player
 
             if (canStandardJump || canCoyoteJump) // 점프 가능하면
             {
-                _maintainInertiaOnJump = (MoveInput.y > 0); // W키(앞으로) 누르고 점프 시 관성 유지 플래그 설정
+                // _maintainInertiaOnJump = (MoveInput.y > 0); // W키(앞으로) 누르고 점프 시 관성 유지 플래그 설정 - 지워야함
                 DoJump(); // 점프 실행
             }
         }
@@ -462,7 +460,7 @@ namespace Player
         private void OnCrouchInputReceived()
         {
             CrouchActive = !CrouchActive; // 웅크리기 상태 토글
-            _maintainInertiaOnJump = false; // 웅크리면 W키 관성 해제
+            // _maintainInertiaOnJump = false; // 웅크리면 W키 관성 해제 - 지워야함
         }
 
         // OnMenuInputReceived: 메뉴 입력 이벤트 처리

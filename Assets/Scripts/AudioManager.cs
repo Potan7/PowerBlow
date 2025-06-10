@@ -24,13 +24,26 @@ public class AudioManager : MonoBehaviour
         else
         {
             Destroy(gameObject); // 이미 인스턴스가 존재하면 중복 생성 방지
+            return;
         }
+
+
+        float masterVolume = PlayerPrefs.GetFloat(AudioType.Master.ToString(), 1f);
+        float bgmVolume = PlayerPrefs.GetFloat(AudioType.BGM.ToString(), 1f);
+        float sfxVolume = PlayerPrefs.GetFloat(AudioType.SFX.ToString(), 1f);
+
+        SetAudioVolume(AudioType.Master, masterVolume);
+        SetAudioVolume(AudioType.BGM, bgmVolume);
+        SetAudioVolume(AudioType.SFX, sfxVolume);
+    
     }
 
     public static void SetAudioVolume(AudioType type, float volume)
     {
         // Debug.Log($"Setting volume for {type}: {volume}");
         Instance.audioMixer.SetFloat(type.ToString(), Mathf.Log10(volume) * 20); // 볼륨을 dB로 변환
+
+        PlayerPrefs.SetFloat(type.ToString(), volume); // PlayerPrefs에 저장
     }
 
     public static float GetAudioVolume(AudioType type)

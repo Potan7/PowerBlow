@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.SceneManagement;
@@ -8,6 +9,13 @@ public class Mainmenu : MonoBehaviour
 
     public Slider[] soundSliders;
     public Slider mouseSensitivitySlider;
+
+    // public GameObject scoreboard;
+    public TextMeshProUGUI[] scoreTexts;
+
+    public static string[] sceneNames = new string[3] { "Tutorial", "Stage1", "Stage2" };
+
+
 
     void Start()
     {
@@ -28,6 +36,31 @@ public class Mainmenu : MonoBehaviour
         mouseSensitivitySlider.maxValue = MenuManager.mousePivotMax;
         mouseSensitivitySlider.onValueChanged.AddListener(OnMouseSensitivityChanged);
         mouseSensitivitySlider.value = MenuManager.mouseSensitivity;
+
+        for (int i = 0; i < 3; i++)
+        {
+            string sceneName = sceneNames[i];
+            Debug.Log($"Scene {i + 1}: {sceneName}");
+            string scoreKey = "Score_" + sceneName;
+            string timerKey = "Timer_" + sceneName;
+            
+            int scoreIdx = i * 2;
+            int timerIdx = i * 2 + 1;
+
+            if (PlayerPrefs.HasKey(scoreKey) && PlayerPrefs.HasKey(timerKey))
+            {
+                int score = PlayerPrefs.GetInt(scoreKey);
+                int timer = PlayerPrefs.GetInt(timerKey);
+
+                scoreTexts[scoreIdx].text = $"{sceneName} - Score: {score}";
+                scoreTexts[timerIdx].text = $"Time: {timer / 1000}s {timer % 1000}ms";
+            }
+            else
+            {
+                scoreTexts[scoreIdx].text = $"{sceneName} - Score: N/A";
+                scoreTexts[timerIdx].text = "Time: N/A";
+            }
+        }
     }
 
     public void StartGame(int stageIndex)

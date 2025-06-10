@@ -993,7 +993,7 @@ MonoBehaviour:
   acceleration: 20
   deceleration: 50
   airDeceleration: 5
-  airControlAcceleration: 8
+  airControlAcceleration: 20
   airSteeringRate: 5
   currentHorizontalSpeed: 0
   rapidTurnRatio: 0.8

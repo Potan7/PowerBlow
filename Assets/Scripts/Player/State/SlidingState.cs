@@ -31,10 +31,10 @@ namespace Player.State
             // 슬라이딩 시작 시 초기 속도 설정
             float startSpeedBase = _player.moveSpeed;
             // 스피드 블록 위에서 슬라이딩 시작 시 추가 속도
-            if (_player.isOnSpeedBlock && _player.CharacterControllerComponent.isGrounded)
-            {
-                startSpeedBase *= 3f; // PlayerController의 스피드 블록 배율과 일치
-            }
+            // if (_player.isOnSpeedBlock && _player.CharacterControllerComponent.isGrounded)
+            // {
+            //     startSpeedBase *= 3f; // PlayerController의 스피드 블록 배율과 일치
+            // }
             // 현재 속도와 계산된 시작 속도 중 더 큰 값을 기준으로 슬라이드 배율 적용, 또는 최소 슬라이드 속도 보장
             _player.currentHorizontalSpeed = Mathf.Max(_player.currentHorizontalSpeed, startSpeedBase) * _player.slideInitialSpeedMultiplier;
 
